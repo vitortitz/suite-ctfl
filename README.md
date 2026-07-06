@@ -1,5 +1,7 @@
 # Suíte CTFL
 
+[![CI](https://github.com/vitortitz/suite-ctfl/actions/workflows/ci.yml/badge.svg)](https://github.com/vitortitz/suite-ctfl/actions/workflows/ci.yml)
+
 Plataforma de estudo para a certificação **ISTQB CTFL — Foundation Level (v4.0)**.
 A metáfora do produto é uma *suíte de testes que você roda em si mesmo*: cada questão
 é um caso de teste que passa ou falha, e o seu progresso é o relatório de cobertura.
@@ -44,6 +46,12 @@ npm run typecheck # checagem de tipos sem emitir
 Cobrem as regras de negócio (distribuição do exame, pontuação, streak, reforço,
 exercícios), o provedor de autenticação local, o fluxo de progresso e um smoke test
 de interface em DOM.
+
+## CI/CD
+
+Todo push e pull request para `main` roda automaticamente no
+[GitHub Actions](.github/workflows/ci.yml) (gratuito): checagem de tipos, suíte
+de testes e build de produção. Um PR só deve ser mesclado com o CI verde.
 
 ## Documentação
 
