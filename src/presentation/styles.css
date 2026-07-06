@@ -252,12 +252,14 @@ body {
 .tts-vol { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
 .tts-vol-label { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
 .tts-vol input[type="range"] { width: 110px; accent-color: var(--accent); }
-.tts-rate { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
-.tts-rate select {
+.tts-vol-value { font-family: var(--mono); font-size: 11px; min-width: 32px; color: var(--ink); }
+.tts-field { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.tts-field select {
   font-family: var(--sans); font-size: 13px; color: var(--ink); background: var(--surface);
-  border: 1px solid var(--line); border-radius: 7px; padding: 4px 8px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 7px; padding: 4px 8px; cursor: pointer; max-width: 200px;
 }
 #tts-status { font-family: var(--mono); }
+#tts-status.tts-error { color: var(--fail); font-family: var(--sans); }
 .acc { border-top: 1px solid var(--line); padding: 6px 0; }
 .acc summary {
   font-family: var(--display); font-weight: 600; font-size: 16px; cursor: pointer;

@@ -13,7 +13,7 @@ infraestrutura), empacotada com **Vite** e testada com **Vitest**.
 
 - **Simulado (estudo dirigido)** — escolha capítulos e quantidade; correção e explicação a cada questão.
 - **Modo exame** — 40 questões na distribuição oficial (8/6/4/11/9/2), 60 minutos, sem feedback até o fim, aprovação a partir de 65%.
-- **Área de estudo** — resumo do syllabus ordenado pelo peso de cada capítulo no exame, com leitura em voz alta (Web Speech API, com controle de volume) para ouvir o resumo enquanto faz outra atividade.
+- **Área de estudo** — resumo do syllabus ordenado pelo peso de cada capítulo no exame, com leitura em voz alta (Gemini TTS, com controle de volume, velocidade e voz) para ouvir o resumo enquanto faz outra atividade. Ver [`docs/SETUP.md`](docs/SETUP.md#leitura-em-voz-alta-gemini-tts).
 - **Progresso e sequência** — streak de dias, tempo de estudo, domínio por capítulo e histórico, salvos no dispositivo.
 - **Reforço por pontos fracos** — monta uma rodada priorizando o que você mais erra e o que ainda não viu.
 - **Exercícios do Capítulo 4** — pratique particionamento de equivalência, valor limite e tabela de decisão com valores gerados a cada tentativa.

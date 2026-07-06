@@ -1,5 +1,6 @@
 import type { Chapter, ChapterId } from "@/domain/types";
 import type { ChapterSyllabus, KLevel } from "@/infrastructure/data/syllabus";
+import { GEMINI_TTS_VOICES, DEFAULT_VOICE_ID } from "../geminiTts";
 import { esc } from "../dom";
 
 export interface StudyProps {
@@ -50,9 +51,10 @@ export function renderStudy(p: StudyProps): string {
     <button class="t-btn" id="tts-stop" type="button" title="Parar leitura" hidden>■</button>
     <label class="tts-vol">
       <span class="tts-vol-label">Volume</span>
-      <input type="range" id="tts-volume" min="0" max="100" value="100" aria-label="Volume da narração">
+      <input type="range" id="tts-volume" min="0" max="100" value="100" title="100%" aria-label="Volume da narração">
+      <span class="tts-vol-value" id="tts-volume-value">100%</span>
     </label>
-    <label class="tts-rate">
+    <label class="tts-field">
       <span class="tts-vol-label">Velocidade</span>
       <select id="tts-rate" aria-label="Velocidade da narração">
         <option value="0.75">0.75×</option>
@@ -61,6 +63,14 @@ export function renderStudy(p: StudyProps): string {
         <option value="1.5">1.5×</option>
         <option value="1.75">1.75×</option>
         <option value="2">2×</option>
+      </select>
+    </label>
+    <label class="tts-field">
+      <span class="tts-vol-label">Voz</span>
+      <select id="tts-voice" aria-label="Voz da narração">
+        ${GEMINI_TTS_VOICES.map(
+          (v) => `<option value="${v.id}" ${v.id === DEFAULT_VOICE_ID ? "selected" : ""}>${esc(v.label)}</option>`,
+        ).join("")}
       </select>
     </label>
     <span class="small muted" id="tts-status" aria-live="polite"></span>

@@ -86,3 +86,71 @@ create policy "progress_update_own" on public.progress
 
 O RLS garante que cada pessoa só lê e grava o próprio progresso. O `user_id` usado
 pelo app é o id do usuário autenticado (`auth.uid()`), então nada mais precisa mudar.
+
+---
+
+## Leitura em voz alta (Gemini TTS)
+
+A aba Estudo tem um botão para ouvir o resumo do capítulo em voz alta. Isso usa o
+**Gemini TTS** (vozes neurais nativas do Gemini) por trás de uma **Supabase Edge
+Function** (`supabase/functions/tts`) — a API key do Gemini fica só no servidor,
+nunca no navegador.
+
+> Implementações anteriores (Web Speech API do navegador e Google Cloud
+> Text-to-Speech clássico) foram mantidas no repositório como referência/fallback
+> futuro, mas não são usadas pela UI: veja `src/presentation/tts.ts` e
+> `src/presentation/googleCloudTtsArchived.ts`.
+
+### 1. Criar a API key do Gemini
+1. Acesse <https://aistudio.google.com/app/apikey> (ou o Google Cloud Console,
+   habilitando a **Generative Language API** no seu projeto).
+2. Gere uma API key.
+3. **Restrinja a key** no Google Cloud Console a apenas essa API, para reduzir o
+   impacto caso ela vaze.
+4. Configure um **alerta de orçamento** no Cloud Billing — o modelo `gemini-2.5-
+   flash-preview-tts` tem cota gratuita, mas é bom ter um alarme de segurança.
+
+### 2. Instalar e autenticar o Supabase CLI
+```bash
+npm install -g supabase
+supabase login
+```
+
+### 3. Vincular ao projeto Supabase já usado pelo app
+O `project_id` já está em `supabase/config.toml` (o mesmo projeto de
+`src/config.ts`). Rode dentro da raiz do repositório:
+```bash
+supabase link --project-ref rtsescugtwwgxgkddasi
+```
+
+### 4. Guardar a key do Gemini como secret (nunca no código)
+```bash
+supabase secrets set GEMINI_API_KEY=SUA_KEY_AQUI
+```
+
+### 5. Publicar a function
+```bash
+supabase functions deploy tts --no-verify-jwt
+```
+
+O `--no-verify-jwt` é **obrigatório**: sem ele, o gateway do Supabase exige um JWT em
+toda requisição, inclusive no preflight `OPTIONS` que o navegador manda antes do
+`POST` — e o preflight nunca carrega `Authorization`. O resultado é exatamente o erro
+"Response to preflight request doesn't pass access control check" no console do
+navegador. (`supabase/config.toml` já define `verify_jwt = false` para essa function;
+a flag no deploy garante que isso é respeitado mesmo se o CLI ignorar o arquivo.)
+
+Como a function fica acessível a quem souber a URL, ela ainda confere se o pedido
+trouxe a **anon key pública** do Supabase no header `Authorization` (o app já manda
+isso sozinho) — não é autenticação forte, só reduz abuso por quem não conhece o
+projeto. A proteção de verdade continua sendo a key do Gemini nunca sair do servidor,
+mais o alerta de orçamento do passo 1.
+
+Pronto — o botão "Ouvir resumo do capítulo" na aba Estudo passa a funcionar. Se a
+function não estiver implantada (ou a key não estiver configurada), o app mostra uma
+mensagem de erro em vez de travar.
+
+### Sobre a API do Gemini TTS (preview)
+`gemini-2.5-flash-preview-tts` é uma API em preview — confira o formato exato da
+requisição/resposta em <https://ai.google.dev/gemini-api/docs/speech-generation>
+antes de depender disso em produção; nomes de campos podem mudar entre versões.

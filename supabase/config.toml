@@ -1,0 +1,9 @@
+project_id = "rtsescugtwwgxgkddasi"
+
+[functions.tts]
+# Precisa ser false: com true (padrão), o gateway do Supabase exige um JWT válido em
+# TODA requisição — inclusive o preflight OPTIONS que o navegador manda antes do POST.
+# O preflight nunca carrega Authorization, então o gateway rejeita antes mesmo do
+# código da function rodar, e o navegador nunca vê os headers de CORS — dá exatamente
+# o erro "Response to preflight request doesn't pass access control check".
+verify_jwt = false

@@ -27,7 +27,7 @@ import { renderStudy } from "./views/studyView";
 import { renderProgress } from "./views/progressView";
 import { renderExercises } from "./views/exercisesView";
 import { renderAuth } from "./views/authView";
-import { TtsReader, chapterToSpeechText, type TtsState } from "./tts";
+import { GeminiTtsReader, chapterToSpeechText, type TtsState } from "./geminiTts";
 
 export interface AppDeps {
   auth: AuthService;
@@ -82,8 +82,9 @@ export class App {
   private exFeedback: { ok: boolean; explanation: string } | null = null;
 
   // leitura em voz alta (aba estudo)
-  private tts = new TtsReader();
+  private tts = new GeminiTtsReader();
   private ttsUnsubscribe: (() => void) | null = null;
+  private ttsErrorUnsubscribe: (() => void) | null = null;
 
   constructor(private readonly deps: AppDeps) {}
 
@@ -394,7 +395,9 @@ export class App {
     const toggleBtn = this.view.querySelector<HTMLButtonElement>("#tts-toggle")!;
     const stopBtn = this.view.querySelector<HTMLButtonElement>("#tts-stop")!;
     const volumeInput = this.view.querySelector<HTMLInputElement>("#tts-volume")!;
+    const volumeValue = this.view.querySelector<HTMLElement>("#tts-volume-value")!;
     const rateSelect = this.view.querySelector<HTMLSelectElement>("#tts-rate")!;
+    const voiceSelect = this.view.querySelector<HTMLSelectElement>("#tts-voice")!;
     const statusEl = this.view.querySelector<HTMLElement>("#tts-status")!;
 
     if (!this.tts.supported) {
@@ -402,32 +405,61 @@ export class App {
       toggleBtn.textContent = "Leitura em voz alta indisponível neste navegador";
       volumeInput.disabled = true;
       rateSelect.disabled = true;
+      voiceSelect.disabled = true;
       return;
     }
 
+    const updateVolumeLabel = (): void => {
+      const pct = `${volumeInput.value}%`;
+      volumeInput.title = pct;
+      volumeValue.textContent = pct;
+    };
     volumeInput.value = String(Math.round(this.tts.volume * 100));
+    updateVolumeLabel();
     rateSelect.value = String(this.tts.rate);
+    voiceSelect.value = this.tts.voiceId;
+
     const updateUi = (state: TtsState): void => {
       stopBtn.hidden = state === "idle";
-      toggleBtn.textContent = state === "playing" ? "Pausar" : state === "paused" ? "Continuar leitura" : "▶ Ouvir resumo do capítulo";
-      statusEl.textContent = state === "playing" ? "Lendo…" : state === "paused" ? "Pausado" : "";
+      toggleBtn.disabled = state === "loading";
+      toggleBtn.textContent =
+        state === "loading"
+          ? "Gerando áudio…"
+          : state === "playing"
+            ? "Pausar"
+            : state === "paused"
+              ? "Continuar leitura"
+              : "▶ Ouvir resumo do capítulo";
+      statusEl.classList.remove("tts-error");
+      statusEl.textContent = state === "loading" ? "Gerando áudio…" : state === "playing" ? "Lendo…" : state === "paused" ? "Pausado" : "";
     };
     updateUi(this.tts.state);
-    // cada renderStudyTab() recria o DOM: descarta o ouvinte da renderização anterior antes de assinar um novo.
+    // cada renderStudyTab() recria o DOM: descarta os ouvintes da renderização anterior antes de assinar novos.
     this.ttsUnsubscribe?.();
     this.ttsUnsubscribe = this.tts.onStateChange(updateUi);
+    this.ttsErrorUnsubscribe?.();
+    this.ttsErrorUnsubscribe = this.tts.onError((message: string) => {
+      statusEl.textContent = message;
+      statusEl.classList.add("tts-error");
+    });
 
     toggleBtn.addEventListener("click", () => {
       if (this.tts.state === "idle") {
         const chapterName = CHAPTERS[this.studyChapter].name;
-        this.tts.speak(chapterToSpeechText(chapterName, this.deps.syllabus[this.studyChapter]));
+        void this.tts.speak(chapterToSpeechText(chapterName, this.deps.syllabus[this.studyChapter]));
       } else {
         this.tts.togglePlayPause();
       }
     });
     stopBtn.addEventListener("click", () => this.tts.stop());
-    volumeInput.addEventListener("change", () => this.tts.setVolume(Number(volumeInput.value) / 100));
+    // Volume e velocidade são aplicados ao vivo (via <audio>), sem custo de rede — não
+    // precisa esperar o usuário soltar o controle para ter efeito.
+    volumeInput.addEventListener("input", () => {
+      updateVolumeLabel();
+      this.tts.setVolume(Number(volumeInput.value) / 100);
+    });
     rateSelect.addEventListener("change", () => this.tts.setRate(Number(rateSelect.value)));
+    voiceSelect.addEventListener("change", () => this.tts.setVoicePreference(voiceSelect.value));
   }
 
   // ---------- progress tab ----------
