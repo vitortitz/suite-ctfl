@@ -9,8 +9,8 @@ export interface AppConfig {
 }
 
 export const CONFIG: AppConfig = {
-  supabaseUrl: "",
-  supabaseAnonKey: "",
+supabaseUrl: "https://rtsescugtwwgxgkddasi.supabase.co",
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0c2VzY3VndHd3Z3hna2RkYXNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyOTg5MjgsImV4cCI6MjA5ODg3NDkyOH0.yqDtSkHY3DQDDweu8GVCsnIdlzRif9pcvpl5C8qbWZQ",
 };
 
 export const CLOUD_ENABLED = Boolean(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
