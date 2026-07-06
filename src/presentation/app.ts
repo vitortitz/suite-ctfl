@@ -27,6 +27,7 @@ import { renderStudy } from "./views/studyView";
 import { renderProgress } from "./views/progressView";
 import { renderExercises } from "./views/exercisesView";
 import { renderAuth } from "./views/authView";
+import { TtsReader, chapterToSpeechText, type TtsState } from "./tts";
 
 export interface AppDeps {
   auth: AuthService;
@@ -79,6 +80,10 @@ export class App {
   private exKind: ExerciseKind = "equivalence";
   private exercise: Exercise | null = null;
   private exFeedback: { ok: boolean; explanation: string } | null = null;
+
+  // leitura em voz alta (aba estudo)
+  private tts = new TtsReader();
+  private ttsUnsubscribe: (() => void) | null = null;
 
   constructor(private readonly deps: AppDeps) {}
 
@@ -136,6 +141,7 @@ export class App {
   }
 
   private setTab(tab: Tab): void {
+    if (tab !== "study") this.tts.stop();
     this.tab = tab;
     if (tab === "suite") this.phase = "start";
     this.root.querySelectorAll<HTMLButtonElement>(".subnav .tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
@@ -376,10 +382,48 @@ export class App {
     });
     this.view.querySelectorAll<HTMLButtonElement>(".prio").forEach((btn) => {
       btn.addEventListener("click", () => {
+        this.tts.stop();
         this.studyChapter = Number(btn.dataset.ch) as ChapterId;
         this.renderStudyTab();
       });
     });
+    this.wireTts();
+  }
+
+  private wireTts(): void {
+    const toggleBtn = this.view.querySelector<HTMLButtonElement>("#tts-toggle")!;
+    const stopBtn = this.view.querySelector<HTMLButtonElement>("#tts-stop")!;
+    const volumeInput = this.view.querySelector<HTMLInputElement>("#tts-volume")!;
+    const statusEl = this.view.querySelector<HTMLElement>("#tts-status")!;
+
+    if (!this.tts.supported) {
+      toggleBtn.disabled = true;
+      toggleBtn.textContent = "Leitura em voz alta indisponível neste navegador";
+      volumeInput.disabled = true;
+      return;
+    }
+
+    volumeInput.value = String(Math.round(this.tts.volume * 100));
+    const updateUi = (state: TtsState): void => {
+      stopBtn.hidden = state === "idle";
+      toggleBtn.textContent = state === "playing" ? "Pausar" : state === "paused" ? "Continuar leitura" : "▶ Ouvir resumo do capítulo";
+      statusEl.textContent = state === "playing" ? "Lendo…" : state === "paused" ? "Pausado" : "";
+    };
+    updateUi(this.tts.state);
+    // cada renderStudyTab() recria o DOM: descarta o ouvinte da renderização anterior antes de assinar um novo.
+    this.ttsUnsubscribe?.();
+    this.ttsUnsubscribe = this.tts.onStateChange(updateUi);
+
+    toggleBtn.addEventListener("click", () => {
+      if (this.tts.state === "idle") {
+        const chapterName = CHAPTERS[this.studyChapter].name;
+        this.tts.speak(chapterToSpeechText(chapterName, this.deps.syllabus[this.studyChapter]));
+      } else {
+        this.tts.togglePlayPause();
+      }
+    });
+    stopBtn.addEventListener("click", () => this.tts.stop());
+    volumeInput.addEventListener("change", () => this.tts.setVolume(Number(volumeInput.value) / 100));
   }
 
   // ---------- progress tab ----------

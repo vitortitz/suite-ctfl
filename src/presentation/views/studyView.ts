@@ -45,6 +45,15 @@ export function renderStudy(p: StudyProps): string {
     <span class="stat-chip"><span class="stat-num">~${active.studyMinutes}</span> min de leitura neste app</span>
     <span class="stat-chip muted"><span class="stat-num">${active.officialMinutes}</span> min no curso oficial do syllabus</span>
   </div>`;
+  const ttsBar = `<div class="tts-bar">
+    <button class="btn ghost tts-toggle" id="tts-toggle" type="button">▶ Ouvir resumo do capítulo</button>
+    <button class="t-btn" id="tts-stop" type="button" title="Parar leitura" hidden>■</button>
+    <label class="tts-vol">
+      <span class="tts-vol-label">Volume</span>
+      <input type="range" id="tts-volume" min="0" max="100" value="100" aria-label="Volume da narração">
+    </label>
+    <span class="small muted" id="tts-status" aria-live="polite"></span>
+  </div>`;
   const sections = chap.sections
     .map(
       (s) => `<details class="acc" open>
@@ -67,6 +76,7 @@ export function renderStudy(p: StudyProps): string {
     <div class="card study-content">
       <span class="tag" style="--c:${active.color}">Cap. ${active.id} · ${esc(active.name)}</span>
       ${stats}
+      ${ttsBar}
       <p class="lead">${esc(chap.intro)}</p>
       ${legend()}
       ${sections}

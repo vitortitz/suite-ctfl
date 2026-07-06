@@ -243,6 +243,16 @@ body {
 }
 .stat-chip.muted { color: var(--ink-2); opacity: 0.75; }
 .stat-num { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--ink); }
+.tts-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 14px 0 0;
+  padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px;
+}
+.tts-toggle { padding: 8px 16px; font-size: 13.5px; }
+.tts-bar .t-btn { flex: none; }
+.tts-vol { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.tts-vol-label { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
+.tts-vol input[type="range"] { width: 110px; accent-color: var(--accent); }
+#tts-status { font-family: var(--mono); }
 .acc { border-top: 1px solid var(--line); padding: 6px 0; }
 .acc summary {
   font-family: var(--display); font-weight: 600; font-size: 16px; cursor: pointer;
