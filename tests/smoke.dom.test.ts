@@ -7,6 +7,7 @@ import { createBrowserStore } from "@/infrastructure/storage/kvStore";
 import { LocalProgressRepository } from "@/infrastructure/storage/localProgressRepository";
 import { StaticQuestionSource } from "@/infrastructure/data/staticQuestionSource";
 import { SYLLABUS } from "@/infrastructure/data/syllabus";
+import { CHAPTER_IDS } from "@/domain/chapters";
 import { StartStudySuite } from "@/application/startStudySuite";
 import { StartExam } from "@/application/startExam";
 import { BuildReinforcementSuite } from "@/application/buildReinforcementSuite";
@@ -17,12 +18,16 @@ import { ComputeProgress } from "@/application/computeProgress";
 function makeApp() {
   const store = createBrowserStore();
   const questions = new StaticQuestionSource();
+  const questionCounts = Object.fromEntries(
+    CHAPTER_IDS.map((id) => [id, questions.byChapter(id).length]),
+  ) as Record<(typeof CHAPTER_IDS)[number], number>;
   const progress = new LocalProgressRepository(store);
   const auth = new AuthService(new LocalAuthProvider(store));
   return new App({
     auth,
     cloud: false,
     syllabus: SYLLABUS,
+    questionCounts,
     startStudy: new StartStudySuite({ questions }),
     startExam: new StartExam({ questions }),
     reinforcement: new BuildReinforcementSuite({ questions, progress }),

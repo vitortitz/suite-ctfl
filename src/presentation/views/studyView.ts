@@ -6,6 +6,7 @@ export interface StudyProps {
   chapters: Chapter[];
   syllabus: Record<ChapterId, ChapterSyllabus>;
   active: ChapterId;
+  questionCounts: Record<ChapterId, number>;
 }
 
 const K_NAME: Record<KLevel, string> = { K1: "Lembrar", K2: "Compreender", K3: "Aplicar" };
@@ -32,13 +33,18 @@ export function renderStudy(p: StudyProps): string {
         <span class="prio-id">Cap. ${c.id}</span>
         <span class="prio-name">${esc(c.name)}</span>
         <span class="prio-bar"><i style="width:${Math.round((c.examWeight / max) * 100)}%"></i></span>
-        <span class="prio-w">${c.examWeight} questões</span>
+        <span class="prio-w">${p.questionCounts[c.id] ?? 0} no banco · ${c.examWeight} na prova</span>
       </button>`,
     )
     .join("");
 
   const chap = p.syllabus[p.active];
   const active = p.chapters.find((c) => c.id === p.active)!;
+  const stats = `<div class="chapter-stats">
+    <span class="stat-chip"><span class="stat-num">${p.questionCounts[active.id] ?? 0}</span> questões no banco</span>
+    <span class="stat-chip"><span class="stat-num">~${active.studyMinutes}</span> min de leitura neste app</span>
+    <span class="stat-chip muted"><span class="stat-num">${active.officialMinutes}</span> min no curso oficial do syllabus</span>
+  </div>`;
   const sections = chap.sections
     .map(
       (s) => `<details class="acc" open>
@@ -60,6 +66,7 @@ export function renderStudy(p: StudyProps): string {
     </aside>
     <div class="card study-content">
       <span class="tag" style="--c:${active.color}">Cap. ${active.id} · ${esc(active.name)}</span>
+      ${stats}
       <p class="lead">${esc(chap.intro)}</p>
       ${legend()}
       ${sections}

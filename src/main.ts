@@ -1,6 +1,8 @@
 /** Composition root: instancia infraestrutura, casos de uso e monta a aplicação. */
 import "./presentation/styles.css";
 import { CONFIG, CLOUD_ENABLED } from "./config";
+import { CHAPTER_IDS } from "./domain/chapters";
+import type { ChapterId } from "./domain/types";
 import { SYLLABUS } from "./infrastructure/data/syllabus";
 import { StaticQuestionSource } from "./infrastructure/data/staticQuestionSource";
 import { createBrowserStore } from "./infrastructure/storage/kvStore";
@@ -37,6 +39,9 @@ async function createSupabaseClient(): Promise<unknown | null> {
 async function boot(): Promise<void> {
   const store = createBrowserStore();
   const questions = new StaticQuestionSource();
+  const questionCounts = Object.fromEntries(
+    CHAPTER_IDS.map((id) => [id, questions.byChapter(id).length]),
+  ) as Record<ChapterId, number>;
   const localProgress = new LocalProgressRepository(store);
   const supabase = await createSupabaseClient();
 
@@ -52,6 +57,7 @@ async function boot(): Promise<void> {
     auth,
     cloud: CLOUD_ENABLED,
     syllabus: SYLLABUS,
+    questionCounts,
     startStudy: new StartStudySuite({ questions }),
     startExam: new StartExam({ questions }),
     reinforcement: new BuildReinforcementSuite({ questions, progress }),

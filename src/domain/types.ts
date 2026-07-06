@@ -8,6 +8,10 @@ export interface Chapter {
   color: string;
   /** Número de questões que este capítulo tem no exame oficial (total 40). */
   examWeight: number;
+  /** Minutos de treinamento recomendados pelo syllabus oficial ISTQB CTFL v4.0. */
+  officialMinutes: number;
+  /** Estimativa de minutos para ler e entender o resumo deste capítulo neste app. */
+  studyMinutes: number;
 }
 
 export interface Question {

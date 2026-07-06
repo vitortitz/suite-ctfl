@@ -236,6 +236,13 @@ body {
 .prio-bar i { display: block; height: 100%; background: var(--c); }
 .prio-w { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
 .study-content .lead { margin-top: 14px; }
+.chapter-stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.stat-chip {
+  display: inline-flex; align-items: baseline; gap: 5px; font-size: 12.5px; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+}
+.stat-chip.muted { color: var(--ink-2); opacity: 0.75; }
+.stat-num { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--ink); }
 .acc { border-top: 1px solid var(--line); padding: 6px 0; }
 .acc summary {
   font-family: var(--display); font-weight: 600; font-size: 16px; cursor: pointer;

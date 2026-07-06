@@ -32,6 +32,7 @@ export interface AppDeps {
   auth: AuthService;
   cloud: boolean;
   syllabus: Record<ChapterId, ChapterSyllabus>;
+  questionCounts: Record<ChapterId, number>;
   startStudy: StartStudySuite;
   startExam: StartExam;
   reinforcement: BuildReinforcementSuite;
@@ -367,7 +368,12 @@ export class App {
 
   // ---------- study tab ----------
   private renderStudyTab(): void {
-    this.view.innerHTML = renderStudy({ chapters: this.chapters, syllabus: this.deps.syllabus, active: this.studyChapter });
+    this.view.innerHTML = renderStudy({
+      chapters: this.chapters,
+      syllabus: this.deps.syllabus,
+      active: this.studyChapter,
+      questionCounts: this.deps.questionCounts,
+    });
     this.view.querySelectorAll<HTMLButtonElement>(".prio").forEach((btn) => {
       btn.addEventListener("click", () => {
         this.studyChapter = Number(btn.dataset.ch) as ChapterId;

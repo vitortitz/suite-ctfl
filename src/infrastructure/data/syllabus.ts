@@ -25,7 +25,7 @@ export interface ChapterSyllabus {
 export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
   1: {
     intro:
-      "Fundamentos de Teste (180 min). O alicerce: vocabulário, princípios e o processo de teste. No exame só há questões K1 e K2 aqui.",
+      "O alicerce: vocabulário, princípios e o processo de teste. No exame só há questões K1 e K2 aqui.",
     sections: [
       {
         id: "1.1",
@@ -105,7 +105,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
   },
   2: {
     intro:
-      "Testes ao Longo do Ciclo de Vida (130 min). Onde o teste se encaixa no SDLC: modelos, abordagens test-first, DevOps, shift-left, níveis e tipos de teste, e manutenção. Só K1 e K2.",
+      "Onde o teste se encaixa no SDLC: modelos, abordagens test-first, DevOps, shift-left, níveis e tipos de teste, e manutenção. Só K1 e K2.",
     sections: [
       {
         id: "2.1",
@@ -161,7 +161,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
   },
   3: {
     intro:
-      "Teste Estático (80 min). Revisões e análise estática — encontrar defeitos sem executar o software. Curto, com pontos fáceis em papéis, tipos de revisão e fatores de sucesso. Só K1 e K2.",
+      "Revisões e análise estática — encontrar defeitos sem executar o software. Curto, com pontos fáceis em papéis, tipos de revisão e fatores de sucesso. Só K1 e K2.",
     sections: [
       {
         id: "3.1",
@@ -211,7 +211,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
   },
   4: {
     intro:
-      "Análise e Modelagem de Teste (390 min). O capítulo de maior peso e o único com K3 forte: você precisa APLICAR as técnicas de caixa-preta para derivar casos de teste, não só reconhecê-las.",
+      "O capítulo de maior peso e o único com K3 forte: você precisa APLICAR as técnicas de caixa-preta para derivar casos de teste, não só reconhecê-las.",
     sections: [
       {
         id: "4.1",
@@ -281,7 +281,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
   },
   5: {
     intro:
-      "Gerenciamento das Atividades de Teste (335 min). Segundo maior peso e também com K3: planejamento, estimativa, priorização, riscos, monitoramento e gestão de defeitos.",
+      "Segundo maior peso e também com K3: planejamento, estimativa, priorização, riscos, monitoramento e gestão de defeitos.",
     sections: [
       {
         id: "5.1",
@@ -380,7 +380,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
   },
   6: {
     intro:
-      "Ferramentas de Teste (20 min). O capítulo mais curto. Categorias de ferramentas e os benefícios e riscos da automação. Só K1 e K2.",
+      "O capítulo mais curto. Categorias de ferramentas e os benefícios e riscos da automação. Só K1 e K2.",
     sections: [
       {
         id: "6.1",
