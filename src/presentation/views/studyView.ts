@@ -52,6 +52,17 @@ export function renderStudy(p: StudyProps): string {
       <span class="tts-vol-label">Volume</span>
       <input type="range" id="tts-volume" min="0" max="100" value="100" aria-label="Volume da narração">
     </label>
+    <label class="tts-rate">
+      <span class="tts-vol-label">Velocidade</span>
+      <select id="tts-rate" aria-label="Velocidade da narração">
+        <option value="0.75">0.75×</option>
+        <option value="1" selected>1×</option>
+        <option value="1.25">1.25×</option>
+        <option value="1.5">1.5×</option>
+        <option value="1.75">1.75×</option>
+        <option value="2">2×</option>
+      </select>
+    </label>
     <span class="small muted" id="tts-status" aria-live="polite"></span>
   </div>`;
   const sections = chap.sections

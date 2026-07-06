@@ -39,10 +39,16 @@ export class TtsReader {
   readonly supported = typeof window !== "undefined" && "speechSynthesis" in window;
   state: TtsState = "idle";
   volume = 1;
+  /** Velocidade da fala: 1 = ritmo normal da voz, ajustável pelo usuário (0.5×–2×). */
+  rate = 1;
 
   private lastText = "";
   private gen = 0;
   private readonly listeners = new Set<(s: TtsState) => void>();
+  // Mantém uma referência forte ao utterance em voo: em Chrome, um SpeechSynthesisUtterance
+  // sem referência externa pode ser coletado pelo GC antes (ou durante) a fala, cancelando-a
+  // silenciosamente — por isso não basta criar a variável local dentro de speak().
+  private currentUtterance: SpeechSynthesisUtterance | null = null;
 
   constructor() {
     // Em alguns navegadores (Chrome), a lista de vozes só é preenchida de forma assíncrona;
@@ -80,17 +86,26 @@ export class TtsReader {
     window.setTimeout(() => {
       if (myGen !== this.gen) return;
       const utter = new SpeechSynthesisUtterance(text);
+      this.currentUtterance = utter; // ver comentário no campo: evita coleta prematura pelo GC
       utter.lang = "pt-BR";
       const voice = this.pickVoice();
       if (voice) utter.voice = voice;
-      utter.rate = 0.97;
+      utter.rate = this.rate;
       utter.pitch = 1;
       utter.volume = this.volume;
       utter.onstart = () => { if (myGen === this.gen) this.setState("playing"); };
-      utter.onend = () => { if (myGen === this.gen) this.setState("idle"); };
-      utter.onerror = () => { if (myGen === this.gen) this.setState("idle"); };
+      utter.onend = () => { if (myGen === this.gen) { this.setState("idle"); this.currentUtterance = null; } };
+      utter.onerror = () => { if (myGen === this.gen) { this.setState("idle"); this.currentUtterance = null; } };
+      // Chrome às vezes deixa o motor de síntese "pausado" internamente após inatividade;
+      // resume() antes de speak() é um no-op inofensivo quando não é preciso, e destrava quando é.
+      window.speechSynthesis.resume();
       window.speechSynthesis.speak(utter);
     }, 60);
+  }
+
+  /** Indica se há um utterance retido (mantendo-o vivo e fora do alcance do GC). */
+  get isSpeaking(): boolean {
+    return this.currentUtterance !== null;
   }
 
   togglePlayPause(): void {
@@ -108,12 +123,19 @@ export class TtsReader {
     if (!this.supported) return;
     this.gen++;
     window.speechSynthesis.cancel();
+    this.currentUtterance = null;
     this.setState("idle");
   }
 
   /** Web Speech API não permite trocar o volume no meio da fala — reinicia a leitura atual com o novo volume. */
   setVolume(v: number): void {
     this.volume = Math.min(1, Math.max(0, v));
+    if (this.state !== "idle" && this.lastText) this.speak(this.lastText);
+  }
+
+  /** Idem para a velocidade: só se aplica reiniciando a leitura atual, se houver uma em andamento. */
+  setRate(r: number): void {
+    this.rate = Math.min(2, Math.max(0.5, r));
     if (this.state !== "idle" && this.lastText) this.speak(this.lastText);
   }
 }

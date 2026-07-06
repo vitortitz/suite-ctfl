@@ -394,16 +394,19 @@ export class App {
     const toggleBtn = this.view.querySelector<HTMLButtonElement>("#tts-toggle")!;
     const stopBtn = this.view.querySelector<HTMLButtonElement>("#tts-stop")!;
     const volumeInput = this.view.querySelector<HTMLInputElement>("#tts-volume")!;
+    const rateSelect = this.view.querySelector<HTMLSelectElement>("#tts-rate")!;
     const statusEl = this.view.querySelector<HTMLElement>("#tts-status")!;
 
     if (!this.tts.supported) {
       toggleBtn.disabled = true;
       toggleBtn.textContent = "Leitura em voz alta indisponível neste navegador";
       volumeInput.disabled = true;
+      rateSelect.disabled = true;
       return;
     }
 
     volumeInput.value = String(Math.round(this.tts.volume * 100));
+    rateSelect.value = String(this.tts.rate);
     const updateUi = (state: TtsState): void => {
       stopBtn.hidden = state === "idle";
       toggleBtn.textContent = state === "playing" ? "Pausar" : state === "paused" ? "Continuar leitura" : "▶ Ouvir resumo do capítulo";
@@ -424,6 +427,7 @@ export class App {
     });
     stopBtn.addEventListener("click", () => this.tts.stop());
     volumeInput.addEventListener("change", () => this.tts.setVolume(Number(volumeInput.value) / 100));
+    rateSelect.addEventListener("change", () => this.tts.setRate(Number(rateSelect.value)));
   }
 
   // ---------- progress tab ----------
