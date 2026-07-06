@@ -36,7 +36,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <p><b>Verificação vs. Validação:</b> verificação = construir <i>corretamente</i> (conforme especificação); validação = construir o produto <i>certo</i> (atende necessidades dos usuários).</p>
         <p><b>Teste ≠ depuração (FL-1.1.2 K2):</b> o teste dinâmico revela falhas; a depuração reproduz (reproduzir a falha), diagnostica (encontrar a causa-raiz) e corrige o defeito. No teste estático o defeito é achado diretamente, sem produzir falha.</p>
         <p><b>Os objetivos variam conforme o contexto:</b> no teste de componente, o foco costuma ser encontrar o máximo de falhas possível; no teste de aceitação, confirmar que o sistema funciona conforme esperado e criar confiança para a entrega; no teste de manutenção, garantir que nenhuma funcionalidade existente foi quebrada por uma mudança.</p>
-        <div class="callout"><span class="tt">exemplo</span>Uma revisão de requisitos (estática) encontra uma ambiguidade sem executar nada; testar o login com senha errada (dinâmico) provoca uma falha observável que revela o defeito.</div>`,
+        <div class="callout"><span class="tt">exemplo</span>Uma revisão de requisitos (estática) encontra uma ambiguidade sem executar nada; testar o login com senha errada (dinâmico) provoca uma falha observável que revela o defeito.</div>
+        <p><b>Base de teste:</b> o conjunto de documentos dos quais as condições de teste são derivadas — requisitos, histórias de usuário, arquitetura, código, ou até o conhecimento tácito de um especialista de domínio. Sem uma base de teste (mesmo informal), não há como saber o que testar nem definir o resultado esperado.</p>`,
       },
       {
         id: "1.2",
@@ -46,7 +47,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <p><b>Testes e QA (FL-1.2.2 K1):</b> o <b>teste é controle de qualidade (QC)</b> — abordagem corretiva e orientada ao produto; a <b>QA</b> é preventiva e focada no processo (garante que os processos produzam qualidade).</p>
         <dl class="term"><dt>Erro</dt><dd>Engano humano (equívoco de uma pessoa).</dd><dt>Defeito</dt><dd>Imperfeição no artefato causada pelo erro (bug/falta).</dd><dt>Falha</dt><dd>Comportamento incorreto ao executar o defeito.</dd><dt>Causa-raiz</dt><dd>Motivo fundamental do problema — identificada pela análise de causa-raiz.</dd></dl>
         <p><b>FL-1.2.3 K2:</b> Nem todo defeito vira falha; falhas também surgem de condições ambientais (ex.: radiação afetando firmware). Causas-raiz abordadas evitam defeitos futuros similares.</p>
-        <p><b>Exemplos de conformidade legal/contratual:</b> normas setoriais como <b>DO-178C</b> (aviônicos), <b>IEC 61508</b> (segurança funcional) e <b>ISO 26262</b> (automotivo) exigem evidências de teste como parte da certificação — nesses contextos, testar não é opcional.</p>`,
+        <p><b>Exemplos de conformidade legal/contratual:</b> normas setoriais como <b>DO-178C</b> (aviônicos), <b>IEC 61508</b> (segurança funcional) e <b>ISO 26262</b> (automotivo) exigem evidências de teste como parte da certificação — nesses contextos, testar não é opcional.</p>
+        <p><b>Custo da qualidade:</b> soma dos custos de <b>prevenção</b> (treinamento, planejamento de testes), <b>avaliação</b> (revisões, execução de testes) e <b>falha</b> — interna (retrabalho antes da entrega) ou externa (suporte, ações judiciais, dano à reputação depois da entrega). Investir em prevenção e avaliação reduz drasticamente os custos de falha externa — é a base econômica do princípio "teste antecipado economiza tempo e dinheiro".</p>`,
       },
       {
         id: "1.3",
@@ -82,6 +84,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <p><b>Contexto (FL-1.4.2 K2):</b> fatores que moldam o processo: stakeholders, equipe, domínio de negócio, aspectos técnicos, restrições do projeto, fatores organizacionais, SDLC escolhido e ferramentas disponíveis.</p>
         <p><b>Testware (FL-1.4.3 K2):</b> tudo que se produz — plano, registro de riscos, condições, casos, cartas de teste, dados, scripts, procedimentos, registros, relatórios. Gerenciado pela gerência de configuração.</p>
         <p><b>Produtos de trabalho por atividade (exemplos):</b> Planejamento → plano de teste; Monitoramento/Controle → relatórios de progresso; Análise → condições de teste e registro de risco atualizado; Modelagem → casos e conjuntos de teste; Implementação → procedimentos, scripts e cronograma de execução; Execução → registros de teste e relatórios de defeito; Conclusão → relatório de conclusão e lições aprendidas.</p>
+        <p><b>Hierarquia de refinamento:</b> <i>condição de teste</i> (o que testar, ex.: "validar limite de idade") → <i>caso de teste</i> (entradas, ações e resultado esperado concretos) → <i>procedimento/script de teste</i> (a sequência de passos executáveis, manual ou automatizada). Cada nível é mais detalhado e mais próximo da execução do que o anterior.</p>
         <p><b>Rastreabilidade (FL-1.4.4 K2):</b> liga base de teste ↔ condições ↔ casos ↔ resultados ↔ defeitos. Permite avaliar cobertura, impacto de mudanças, auditorias e comunicação com stakeholders.</p>
         <p><b>Papéis (FL-1.4.5 K2) — dois papéis no nível fundamental:</b> <b>gerenciamento de teste</b> (planejar, monitorar/controlar, concluir) e <b>testador</b> (analisar, modelar, implementar, executar). Uma pessoa pode ocupar ambos.</p>`,
       },
@@ -99,7 +102,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <dt>Alta independência</dt><dd>Testadores de fora da equipe, dentro da organização.</dd>
         <dt>Independência muito alta</dt><dd>Testadores de fora da organização.</dd>
         </dl>
-        <p><b>Benefícios:</b> testadores independentes encontram tipos diferentes de defeitos; questionam premissas. <b>Desvantagens:</b> risco de isolamento, problemas de comunicação, relação adversa com o dev, perda do senso de responsabilidade dos devs, visto como gargalo.</p>`,
+        <p><b>Benefícios:</b> testadores independentes encontram tipos diferentes de defeitos; questionam premissas. <b>Desvantagens:</b> risco de isolamento, problemas de comunicação, relação adversa com o dev, perda do senso de responsabilidade dos devs, visto como gargalo.</p>
+        <p><b>Comunicação construtiva na prática:</b> descreva o defeito, não a pessoa. Em vez de "você esqueceu de validar o campo", prefira "o campo aceita valores negativos, o que não está previsto na especificação" — objetivo, verificável e sem julgar quem escreveu o código.</p>`,
       },
     ],
   },
@@ -124,7 +128,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <p><b>FL-2.1.6 K2 — Retrospectivas:</b> realizadas no final de iteração, projeto ou marco. Participantes discutem o que foi bem, o que pode melhorar e como incorporar melhorias. Resultados no relatório de conclusão. Benefícios: maior eficácia/eficiência, qualidade do testware, vínculo da equipe, melhoria da base de teste.</p>
         <p><b>Modelo V (exemplo sequencial):</b> cada fase de desenvolvimento tem uma fase de teste correspondente planejada em paralelo — aceitação ↔ requisitos, sistema ↔ projeto arquitetural, integração ↔ projeto detalhado, componente ↔ codificação. A análise e o projeto de teste começam muito antes da execução, em espelho com o dev.</p>
         <p><b>Scrum e Kanban na prática:</b> no Scrum, o time testa dentro de sprints com Sprint Backlog, Daily Scrum, Sprint Review e Retrospectiva; no Kanban, o fluxo é contínuo, com limites de trabalho em progresso (WIP) e um quadro visual no lugar de iterações fixas.</p>
-        <p><b>Shift-right:</b> complementa o shift-left testando também em produção — monitoramento, transações sintéticas, testes A/B e lançamentos canário (canary releases) validam o comportamento real com risco controlado.</p>`,
+        <p><b>Shift-right:</b> complementa o shift-left testando também em produção — monitoramento, transações sintéticas, testes A/B e lançamentos canário (canary releases) validam o comportamento real com risco controlado.</p>
+        <p><b>CI, Continuous Delivery e Continuous Deployment não são sinônimos:</b> <b>CI</b> integra e testa automaticamente a cada commit; <b>Continuous Delivery</b> garante que o build está sempre pronto para ir a produção, mas a liberação é manual; <b>Continuous Deployment</b> vai além e libera automaticamente cada build aprovado para produção, sem intervenção humana.</p>`,
       },
       {
         id: "2.2",
@@ -142,7 +147,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <p><b>Estratégias de integração:</b> <b>big-bang</b> (tudo integrado de uma vez — simples de organizar, mas difícil de isolar defeitos), <b>bottom-up</b> (de baixo para cima, usando <i>drivers</i> para simular módulos superiores ainda não prontos) e <b>top-down</b> (de cima para baixo, usando <i>stubs</i> para simular módulos inferiores ainda não prontos).</p>
         <p><b>FL-2.2.2 K2 — Tipos de teste:</b> <b>funcional</b> (o que faz — integridade, correção, adequação), <b>não funcional</b> (quão bem faz — ISO 25010), <b>caixa-preta</b> (comportamento/especificação) e <b>caixa-branca</b> (estrutura/código). Todos os tipos aplicam-se a todos os níveis.</p>
         <p><b>As 8 características da ISO/IEC 25010:</b> adequação funcional, eficiência de desempenho, compatibilidade, usabilidade, confiabilidade, segurança, manutenibilidade e portabilidade — base para os tipos de teste não funcional.</p>
-        <p><b>FL-2.2.3 K2 — Confirmação ≠ Regressão:</b> <b>confirmação</b> re-executa o caso que falhou para verificar se o defeito foi corrigido; <b>regressão</b> garante que mudanças não quebraram o que funcionava — forte candidata à automação; deve começar cedo e crescer a cada iteração.</p>`,
+        <p><b>FL-2.2.3 K2 — Confirmação ≠ Regressão:</b> <b>confirmação</b> re-executa o caso que falhou para verificar se o defeito foi corrigido; <b>regressão</b> garante que mudanças não quebraram o que funcionava — forte candidata à automação; deve começar cedo e crescer a cada iteração.</p>
+        <p><b>Base de teste típica por nível:</b> componente → especificação de componente, modelo de dados, código; integração de componentes → arquitetura de software, sequência de chamadas, protocolos de interface; sistema → especificação de requisitos, casos de uso, modelos de risco; integração de sistemas → arquitetura do sistema, especificações de interface externa; aceite → requisitos de negócio, processos, regulações, necessidades do usuário.</p>`,
       },
       {
         id: "2.3",
@@ -155,7 +161,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <dt>Aposentadoria</dt><dd>Fim de vida do sistema — testa arquivamento de dados, restauração e recuperação.</dd>
         </dl>
         <p><b>Escopo</b> depende do grau de risco da mudança, tamanho do sistema e tamanho da mudança. A <b>análise de impacto</b> identifica áreas afetadas e decide se a mudança deve ser feita — fundamental para dimensionar a regressão.</p>
-        <p><b>Na prática:</b> quanto maior o risco e o tamanho da mudança, maior o escopo de regressão necessário; a qualidade da rastreabilidade existente entre requisitos e testware determina o quão precisa (e barata) essa análise pode ser.</p>`,
+        <p><b>Na prática:</b> quanto maior o risco e o tamanho da mudança, maior o escopo de regressão necessário; a qualidade da rastreabilidade existente entre requisitos e testware determina o quão precisa (e barata) essa análise pode ser.</p>
+        <div class="callout"><span class="tt">exemplo</span>Uma loja online altera a fórmula de cálculo do frete. Análise de impacto identifica: carrinho de compras, checkout, cupons de desconto (podem combinar com frete grátis) e o relatório financeiro — todas essas áreas entram no escopo da regressão, mesmo sem terem sido alteradas diretamente.</div>`,
       },
     ],
   },
@@ -180,7 +187,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
           <li>Lacunas na cobertura da base de testes</li>
         </ul>
         <p><b>FL-3.1.3 K2 — Estático × Dinâmico:</b> estático não executa o código, encontra defeitos diretamente; dinâmico executa o código e produz falhas a partir das quais o defeito é determinado. Estático alcança caminhos raramente executados; aplica-se a artefatos não executáveis; mede características que não dependem da execução (ex.: capacidade de manutenção). Análise estática é frequentemente incorporada em pipelines CI.</p>
-        <p><b>Análise estática automatizada</b> (linters, ferramentas de qualidade de código) verifica padrões de codificação, complexidade ciclomática e vulnerabilidades conhecidas — geralmente integrada ao pipeline de CI, antes mesmo dos testes dinâmicos.</p>`,
+        <p><b>Análise estática automatizada</b> (linters, ferramentas de qualidade de código) verifica padrões de codificação, complexidade ciclomática e vulnerabilidades conhecidas — geralmente integrada ao pipeline de CI, antes mesmo dos testes dinâmicos.</p>
+        <div class="callout"><span class="tt">exemplo</span>Ao revisar a especificação "o sistema deve responder rapidamente", um revisor aponta ambiguidade (requisito não testável — "rapidamente" não é mensurável). É um defeito de <b>requisito</b>, encontrado sem executar nada, exatamente o tipo de problema que o teste estático resolve antes que vire código.</div>`,
       },
       {
         id: "3.2",
@@ -205,7 +213,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <dt>Revisão técnica</dt><dd>Conduzida por um moderador; foco técnico, busca consenso entre pares/especialistas; costuma usar checklist.</dd>
         <dt>Inspeção</dt><dd>A mais formal; papéis fixos, métricas coletadas, checklist obrigatório, critérios de entrada/saída bem definidos.</dd>
         </dl>
-        <p><b>FL-3.2.5 K1 — Fatores de sucesso:</b> objetivos claros e critérios de saída mensuráveis (nunca avaliar o autor); tipo de revisão adequado ao contexto; revisões em pequenas partes; feedback aos autores e stakeholders; tempo suficiente para preparo; apoio da gerência; revisão como parte da cultura; treinamento adequado; facilitação de reuniões.</p>`,
+        <p><b>FL-3.2.5 K1 — Fatores de sucesso:</b> objetivos claros e critérios de saída mensuráveis (nunca avaliar o autor); tipo de revisão adequado ao contexto; revisões em pequenas partes; feedback aos autores e stakeholders; tempo suficiente para preparo; apoio da gerência; revisão como parte da cultura; treinamento adequado; facilitação de reuniões.</p>
+        <p><b>Exemplo de itens de checklist</b> para revisar uma história de usuário: Cada critério de aceite é testável? Os cenários negativos foram considerados, além dos positivos? As dependências com outras histórias estão explícitas? Aspectos não funcionais relevantes (desempenho, segurança) foram mencionados? Uma checklist boa é curta, específica do produto revisado e revisada periodicamente com base nos defeitos mais recorrentes.</p>`,
       },
     ],
   },
@@ -223,7 +232,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <dt>Caixa-branca (baseadas na estrutura)</dt><dd>Derivam testes da implementação/estrutura interna; só criados após o projeto ou implementação.</dd>
         <dt>Baseadas na experiência</dt><dd>Usam conhecimento e experiência do testador; complementam as demais; podem detectar defeitos que as outras não pegam.</dd>
         </dl>
-        <p><b>Como escolher a técnica:</b> considere o tipo de sistema, padrões regulatórios, nível de risco, objetivo do teste, documentação disponível, conhecimento do testador e tempo/orçamento. Combinar técnicas (ex.: particionamento de equivalência + valor limite, ou caixa-preta + baseada em experiência) costuma dar cobertura melhor do que uma técnica isolada.</p>`,
+        <p><b>Como escolher a técnica:</b> considere o tipo de sistema, padrões regulatórios, nível de risco, objetivo do teste, documentação disponível, conhecimento do testador e tempo/orçamento. Combinar técnicas (ex.: particionamento de equivalência + valor limite, ou caixa-preta + baseada em experiência) costuma dar cobertura melhor do que uma técnica isolada.</p>
+        <p><b>Cobertura não é garantia de qualidade:</b> 100% de cobertura de instrução, decisão ou partições mede quanto da estrutura/especificação foi <i>exercitada</i> — não prova ausência de defeitos (princípio 1, capítulo 1). É possível ter 100% de cobertura e ainda deixar passar um defeito, se o resultado esperado não for verificado corretamente.</p>`,
       },
       {
         id: "4.2",
@@ -231,6 +241,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         k: ["K3"],
         html: `<p><b>FL-4.2.1 K3 — Particionamento de Equivalência (EP):</b> divide dados em partições cujos elementos são processados da mesma forma — um representante por partição é suficiente. Partições válidas (processadas) e inválidas (rejeitadas). <b>Cobertura:</b> nº de partições executadas / total de partições identificadas. Com múltiplos parâmetros, usa-se <b>Each Choice Coverage (ECC)</b>: cada partição de cada conjunto executada ao menos uma vez.</p>
         <div class="callout"><span class="tt">exemplo EP</span>Faixa 18–65 → 3 partições: inválida (&lt;18), válida (18–65), inválida (&gt;65). Um caso por partição = 3 casos mínimos.</div>
+        <div class="callout"><span class="tt">exemplo ECC</span>Uma máquina de café tem 3 tamanhos × 5 níveis de açúcar. Testar <i>todas</i> as combinações exigiria 15 casos. Com <b>Each Choice Coverage</b>, basta garantir que cada tamanho e cada nível de açúcar apareça em pelo menos um caso — o maior conjunto (5 níveis de açúcar) define o mínimo: <b>5 casos</b> já cobrem todos os valores de ambos os parâmetros pelo menos uma vez.</div>
         <p><b>FL-4.2.2 K3 — Análise de Valor Limite (BVA):</b> só para partições <i>ordenadas</i>. Foca nos limites onde desenvolvedores mais erram.</p>
         <dl class="term">
         <dt>BVA 2 valores</dt><dd>Por limite: o próprio limite + vizinho da partição adjacente. Para 18–65: <b>17, 18</b> e <b>65, 66</b>.</dd>
@@ -253,6 +264,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         html: `<p><b>FL-4.3.1 K2 — Cobertura de instrução:</b> % de instruções executáveis exercitadas. 100% garante que todas foram executadas ao menos uma vez — mas não detecta defeitos dependentes de dados nem garante que toda a lógica de decisão foi testada.</p>
         <p><b>FL-4.3.2 K2 — Cobertura de ramificação:</b> % de ramos (branches) do fluxo de controle exercitados — condicionais (if/switch/loop) e incondicionais. <b>Regra de ouro (v4.0):</b> 100% de <b>ramificação</b> ⇒ 100% de instrução, mas não o contrário. Ramificação substitui/é mais forte que instrução.</p>
         <p><b>FL-4.3.3 K2 — Valor do teste caixa-branca:</b> toda a implementação é considerada — detecta defeitos mesmo com especificação vaga/incompleta. Ponto fraco: se o software não implementou um requisito, o teste caixa-branca pode não detectar essa ausência. Fornece medição objetiva de cobertura; pode ser usado em testes estáticos (execuções secas de código) e em pseudocódigo.</p>
+        <p><b>Cobertura de caminho (path coverage):</b> mede a proporção de caminhos completos e distintos pelo fluxo de controle exercitados — mais forte ainda do que a cobertura de ramificação, mas cresce exponencialmente com o número de decisões e loops. Não é exigida no Foundation Level, mas é útil saber que a hierarquia de rigor é instrução &lt; decisão/ramificação &lt; caminho.</p>
         <div class="callout"><span class="tt">exemplo</span>Um método com 10 instruções e uma única decisão if/else (2 ramos). Um teste que só passa pelo caminho "verdadeiro" dá 100% de cobertura de instrução nesse ramo, mas apenas 50% de cobertura de ramificação — falta exercitar o caminho "falso".</div>`,
       },
       {
@@ -262,6 +274,7 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         html: `<p><b>FL-4.4.1 K2 — Suposição de erro:</b> antecipa erros, defeitos e falhas com base no conhecimento do testador (histórico do sistema, erros típicos de devs, falhas em sistemas similares). <b>Ataques a falhas:</b> abordagem metódica — criar/adquirir lista de possíveis erros e modelar testes que os identifiquem.</p>
         <p><b>FL-4.4.2 K2 — Teste exploratório:</b> projeto, execução e aprendizado <i>simultâneos</i>. Útil quando especificações são escassas ou há pressão de tempo. Pode ser estruturado em <b>sessões baseadas em sessões</b> com <b>test charters</b> (cartas com objetivos) e debriefing. Mais eficaz com testadores experientes e com conhecimento do domínio. Pode incorporar outras técnicas (ex.: EP).</p>
         <p><b>Estrutura de uma carta de teste (test charter):</b> missão/objetivo da sessão, escopo (o que está dentro e fora), recursos e referências disponíveis, e tempo alocado (time-box). A sessão encerra com um <b>debriefing</b>, registrando o que foi testado, o que foi encontrado e ideias para próximas sessões.</p>
+        <div class="callout"><span class="tt">exemplo de carta</span><b>Missão:</b> explorar o fluxo de recuperação de senha em busca de falhas de segurança. <b>Escopo:</b> tela de recuperação e e-mail enviado; fora de escopo, o login normal. <b>Recursos:</b> conta de teste, acesso à caixa de e-mail. <b>Tempo:</b> 45 minutos, sessão única.</div>
         <p><b>FL-4.4.3 K2 — Teste baseado em checklist:</b> lista de condições a verificar — derivadas de experiência, padrões, riscos. Itens formulados como perguntas verificáveis diretamente. Não deve incluir itens automatizados, critérios de entrada/saída ou itens muito genéricos. Listas devem ser atualizadas regularmente com base em análise de defeitos. Sem casos detalhados, provê consistência mas menor repetibilidade.</p>`,
       },
       {
@@ -275,7 +288,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <dt>Orientado por regras</dt><dd>Lista de pontos de verificação ou tabela de mapeamento entrada/saída.</dd>
         </dl>
         <p><b>FL-4.5.3 K3 — ATDD:</b> casos de teste criados <i>antes</i> da implementação, colaborativamente (clientes, devs, testadores). Etapas: 1) workshop de especificação — analisa/escreve história e critérios; 2) criação dos casos — primeiro positivos, depois negativos, depois não funcionais. Casos expressos em linguagem natural com pré-condições, entradas e pós-condições. Automatizáveis via framework de automação → testes de aceite viram requisitos executáveis.</p>
-        <div class="callout"><span class="tt">exemplo</span><b>História:</b> "Como cliente, quero recuperar minha senha por e-mail, para que eu possa acessar minha conta mesmo sem lembrar a senha." <b>Critério de aceite (Dado/Quando/Então):</b> Dado um e-mail cadastrado, Quando o cliente solicita a recuperação, Então um link válido por 1 hora é enviado.</div>`,
+        <div class="callout"><span class="tt">exemplo</span><b>História:</b> "Como cliente, quero recuperar minha senha por e-mail, para que eu possa acessar minha conta mesmo sem lembrar a senha." <b>Critério de aceite (Dado/Quando/Então):</b> Dado um e-mail cadastrado, Quando o cliente solicita a recuperação, Então um link válido por 1 hora é enviado.</div>
+        <p><b>Cenário negativo correspondente (ordem do ATDD: positivo → negativo → não funcional):</b> Dado um e-mail <i>não</i> cadastrado, Quando o cliente solicita a recuperação, Então o sistema exibe uma mensagem genérica de confirmação, sem revelar se o e-mail existe na base (evita vazar quais e-mails estão cadastrados).</p>`,
       },
     ],
   },
@@ -316,7 +330,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <dt>Q2 — Negócio / Apoia equipe</dt><dd>Funcionais, exemplos, histórias de usuário, protótipos UX, APIs; verificam critérios de aceite; manuais ou automatizados.</dd>
         <dt>Q3 — Negócio / Avalia produto</dt><dd>Exploratório, usabilidade, aceite do usuário; orientados ao usuário; geralmente manuais.</dd>
         <dt>Q4 — Tecnologia / Avalia produto</dt><dd>Smoke tests e não funcionais (exceto usabilidade); geralmente automatizados.</dd>
-        </dl>`,
+        </dl>
+        <p><b>Pirâmide × Quadrantes:</b> são lentes complementares, não concorrentes. A <b>pirâmide</b> orienta a granularidade e o volume de automação (mais testes pequenos, menos grandes); os <b>quadrantes</b> orientam o objetivo e o momento de cada teste (apoiar a equipe durante o desenvolvimento vs. avaliar o produto pronto). Um mesmo teste de componente automatizado é ao mesmo tempo "base da pirâmide" e "Q1".</p>`,
       },
       {
         id: "5.2",
@@ -330,7 +345,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         </dl>
         <p><b>FL-5.2.3 K2 — Análise de risco do produto:</b> identificação (brainstorming, workshops, entrevistas, diagramas causa-efeito) + avaliação (categorização, probabilidade, impacto, nível, priorização). Abordagem quantitativa (probabilidade × impacto) ou qualitativa (matriz de risco). Resultados influenciam: escopo dos testes, níveis/tipos propostos, técnicas/cobertura, esforço estimado, ordem de priorização, atividades complementares.</p>
         <p><b>FL-5.2.4 K2 — Controle de risco do produto:</b> mitigação + monitoramento. Opções de resposta: mitigação por testes, aceite, transferência (seguro), plano de contingência. Ações de mitigação via teste: testadores experientes/adequados, independência adequada, revisões e análise estática, técnicas/cobertura adequadas, tipos de teste que abordam as características afetadas, testes dinâmicos incluindo regressão.</p>
-        <div class="callout"><span class="tt">exemplo</span>Risco: "o módulo de pagamento pode calcular o imposto errado". Probabilidade: alta (lógica complexa, poucos testes unitários). Impacto: alto (perda financeira, reputação). Nível de risco: alto → prioridade máxima de teste nesse módulo, com técnicas mais rigorosas e maior cobertura.</div>`,
+        <div class="callout"><span class="tt">exemplo</span>Risco: "o módulo de pagamento pode calcular o imposto errado". Probabilidade: alta (lógica complexa, poucos testes unitários). Impacto: alto (perda financeira, reputação). Nível de risco: alto → prioridade máxima de teste nesse módulo, com técnicas mais rigorosas e maior cobertura.</div>
+        <p><b>FMEA (Failure Mode and Effect Analysis):</b> técnica estruturada de análise de risco do produto. Para cada componente, lista-se os possíveis <b>modos de falha</b> (o que pode dar errado), seus <b>efeitos</b> (impacto no usuário/sistema) e <b>causas</b>; cada combinação recebe notas de severidade, probabilidade de ocorrência e dificuldade de detecção, cujo produto prioriza onde investir o esforço de teste.</p>`,
       },
       {
         id: "5.3",
@@ -344,7 +360,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         </dl>
         <p>Públicos diferentes requerem diferentes formatos e frequências — mesma equipe: informal/frequente; projeto concluído: formal/único.</p>
         <p><b>FL-5.3.3 K2 — Comunicação do status:</b> verbal, painéis (CI/CD, kanban, burn-down), comunicação eletrônica (e-mail, chat), documentação online, relatórios formais. Comunicação mais formal para equipes distribuídas.</p>
-        <p><b>Painéis comuns:</b> burn-down/burn-up chart (trabalho restante × tempo), gráfico de defeitos abertos × fechados ao longo do tempo, e cobertura acumulada — ajudam a visualizar a tendência, não só o número absoluto no momento.</p>`,
+        <p><b>Painéis comuns:</b> burn-down/burn-up chart (trabalho restante × tempo), gráfico de defeitos abertos × fechados ao longo do tempo, e cobertura acumulada — ajudam a visualizar a tendência, não só o número absoluto no momento.</p>
+        <p><b>Duas fórmulas úteis:</b> <b>densidade de defeitos</b> = número de defeitos / tamanho do produto (ex.: por mil linhas de código ou por ponto de função) — compara módulos entre si. <b>DDR (Defect Detection Ratio)</b> = defeitos encontrados pelo teste / (defeitos encontrados pelo teste + defeitos encontrados depois, em produção) — quanto mais perto de 1, mais eficaz foi o teste em capturar problemas antes da entrega.</p>`,
       },
       {
         id: "5.4",
@@ -353,7 +370,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         html: `<p><b>FL-5.4.1 K2 — CM no teste:</b> identifica, controla e rastreia o testware como <b>itens de configuração</b> — planos, estratégias, condições, casos, scripts, resultados, registros e relatórios. Cada item tem ID único, versionamento e rastreabilidade de mudanças.</p>
         <p><b>Baseline:</b> item de configuração aprovado para teste; alterações só via processo formal de controle de alterações. É possível reverter para baseline anterior para reproduzir resultados de testes anteriores.</p>
         <p>O CM garante que todos os itens são identificados exclusivamente, controlados por versão, rastreados quanto a alterações e relacionados entre si. No DevOps, a CM costuma ser automatizada no pipeline de CI/CD.</p>
-        <p><b>Na prática:</b> ferramentas de controle de versão (Git, SVN) e de gestão de testes atribuem um identificador único e uma versão a cada item; um release ou build é associado a uma baseline específica de testware, permitindo saber exatamente quais testes validaram qual versão do sistema.</p>`,
+        <p><b>Na prática:</b> ferramentas de controle de versão (Git, SVN) e de gestão de testes atribuem um identificador único e uma versão a cada item; um release ou build é associado a uma baseline específica de testware, permitindo saber exatamente quais testes validaram qual versão do sistema.</p>
+        <p><b>Exemplo de esquema de identificação:</b> <code>TC-CAP4-EP-003_v2</code> pode identificar o terceiro caso de teste de particionamento de equivalência do capítulo 4, na segunda versão — um esquema consistente facilita rastrear qual versão de cada item foi usada em qual execução.</p>`,
       },
       {
         id: "5.5",
@@ -374,7 +392,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
           <li><b>Referências</b> ao caso de teste</li>
         </ul>
         <p>Severidade ≠ prioridade: um bug cosmético pode ter alta prioridade (na tela de login) e baixa severidade técnica.</p>
-        <p><b>Ciclo de vida típico de um defeito:</b> Novo/Aberto → Em análise → Confirmado/Atribuído → Em correção → Corrigido → Em reteste → Fechado (ou Reaberto, se o reteste falhar; ou Rejeitado/Duplicado, se não for um defeito válido).</p>`,
+        <p><b>Ciclo de vida típico de um defeito:</b> Novo/Aberto → Em análise → Confirmado/Atribuído → Em correção → Corrigido → Em reteste → Fechado (ou Reaberto, se o reteste falhar; ou Rejeitado/Duplicado, se não for um defeito válido).</p>
+        <div class="callout"><span class="tt">ruim vs. bom</span><b>Relatório fraco:</b> "O login não funciona." <b>Relatório bom:</b> "Ao logar com e-mail válido e senha correta em Chrome 126/Windows 11, o sistema retorna erro 500 (esperado: redirecionar ao painel). Passos: 1) acessar /login; 2) preencher credenciais válidas; 3) clicar em Entrar. Reproduzido em 3/3 tentativas." O segundo é acionável; o primeiro exige que o desenvolvedor investigue do zero.</div>`,
       },
     ],
   },
@@ -398,7 +417,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
         <dt>Infraestrutura</dt><dd>VMs, contêineres — escalabilidade e padronização da implantação.</dd>
         </dl>
         <p>Até uma planilha é uma ferramenta de teste no contexto adequado.</p>
-        <p><b>Open-source vs. comercial:</b> ferramentas open-source costumam ter menor custo inicial, mas podem exigir mais esforço de customização e dependem do suporte da comunidade; ferramentas comerciais oferecem suporte dedicado, ao custo de maior dependência do fornecedor (ver riscos na seção 6.2).</p>`,
+        <p><b>Open-source vs. comercial:</b> ferramentas open-source costumam ter menor custo inicial, mas podem exigir mais esforço de customização e dependem do suporte da comunidade; ferramentas comerciais oferecem suporte dedicado, ao custo de maior dependência do fornecedor (ver riscos na seção 6.2).</p>
+        <p><b>Integração entre ferramentas:</b> o valor de uma ferramenta cresce quando ela se integra a outras do ecossistema — por exemplo, uma ferramenta de execução que registra resultados automaticamente numa ferramenta de gerenciamento de defeitos, ou um pipeline de CI que aciona testes e publica cobertura sem intervenção manual. Ferramentas isoladas (silos) reduzem esse ganho.</p>`,
       },
       {
         id: "6.2",
@@ -425,7 +445,8 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
           <li>Ferramenta inadequada para requisitos normativos/de segurança</li>
         </ul>
         <p><b>Antes de adotar uma ferramenta:</b> avalie a maturidade do processo atual, o orçamento disponível, o treinamento necessário e a compatibilidade com o ambiente técnico existente.</p>
-        <p><b>Boa prática:</b> iniciar com um <b>projeto-piloto</b> para avaliar o ajuste com o contexto antes da adoção ampla — ele revela o que precisaria mudar nos processos, calibra expectativas e testa a integração com as ferramentas já em uso.</p>`,
+        <p><b>Boa prática:</b> iniciar com um <b>projeto-piloto</b> para avaliar o ajuste com o contexto antes da adoção ampla — ele revela o que precisaria mudar nos processos, calibra expectativas e testa a integração com as ferramentas já em uso.</p>
+        <p><b>Vale a pena automatizar?</b> Um jeito simples de decidir: compare o custo de introdução e manutenção dos scripts com o custo de repetir o teste manualmente ao longo do tempo. Testes executados poucas vezes ou muito instáveis (UI que muda com frequência) tendem a compensar menos do que testes de regressão estáveis e repetidos a cada build.</p>`,
       },
     ],
   },
