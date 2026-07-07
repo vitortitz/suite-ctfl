@@ -27,7 +27,7 @@ import { renderStudy } from "./views/studyView";
 import { renderProgress } from "./views/progressView";
 import { renderExercises } from "./views/exercisesView";
 import { renderAuth } from "./views/authView";
-import { GeminiTtsReader, chapterToSpeechText, type TtsState } from "./geminiTts";
+import { GoogleCloudTtsReader, chapterToSpeechText, type TtsState } from "./googleCloudTts";
 
 export interface AppDeps {
   auth: AuthService;
@@ -82,7 +82,7 @@ export class App {
   private exFeedback: { ok: boolean; explanation: string } | null = null;
 
   // leitura em voz alta (aba estudo)
-  private tts = new GeminiTtsReader();
+  private tts = new GoogleCloudTtsReader();
   private ttsUnsubscribe: (() => void) | null = null;
   private ttsErrorUnsubscribe: (() => void) | null = null;
 
@@ -426,10 +426,10 @@ export class App {
         state === "loading"
           ? "Gerando áudio…"
           : state === "playing"
-            ? "Pausar"
+            ? "⏸ Pausar"
             : state === "paused"
-              ? "Continuar leitura"
-              : "▶ Ouvir resumo do capítulo";
+              ? "▶ Continuar"
+              : "▶ Ouvir Resumo";
       statusEl.classList.remove("tts-error");
       statusEl.textContent = state === "loading" ? "Gerando áudio…" : state === "playing" ? "Lendo…" : state === "paused" ? "Pausado" : "";
     };

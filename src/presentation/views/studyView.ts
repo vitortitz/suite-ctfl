@@ -1,6 +1,6 @@
 import type { Chapter, ChapterId } from "@/domain/types";
 import type { ChapterSyllabus, KLevel } from "@/infrastructure/data/syllabus";
-import { GEMINI_TTS_VOICES, DEFAULT_VOICE_ID } from "../geminiTts";
+import { GOOGLE_TTS_VOICES, DEFAULT_VOICE_ID } from "../googleCloudTts";
 import { esc } from "../dom";
 
 export interface StudyProps {
@@ -47,8 +47,8 @@ export function renderStudy(p: StudyProps): string {
     <span class="stat-chip muted"><span class="stat-num">${active.officialMinutes}</span> min no curso oficial do syllabus</span>
   </div>`;
   const ttsBar = `<div class="tts-bar">
-    <button class="btn ghost tts-toggle" id="tts-toggle" type="button">▶ Ouvir resumo do capítulo</button>
-    <button class="t-btn" id="tts-stop" type="button" title="Parar leitura" hidden>■</button>
+    <button class="btn ghost tts-toggle" id="tts-toggle" type="button">▶ Ouvir Resumo</button>
+    <button class="btn ghost tts-stop" id="tts-stop" type="button" title="Parar leitura" hidden>■ Parar</button>
     <label class="tts-vol">
       <span class="tts-vol-label">Volume</span>
       <input type="range" id="tts-volume" min="0" max="100" value="100" title="100%" aria-label="Volume da narração">
@@ -68,7 +68,7 @@ export function renderStudy(p: StudyProps): string {
     <label class="tts-field">
       <span class="tts-vol-label">Voz</span>
       <select id="tts-voice" aria-label="Voz da narração">
-        ${GEMINI_TTS_VOICES.map(
+        ${GOOGLE_TTS_VOICES.map(
           (v) => `<option value="${v.id}" ${v.id === DEFAULT_VOICE_ID ? "selected" : ""}>${esc(v.label)}</option>`,
         ).join("")}
       </select>

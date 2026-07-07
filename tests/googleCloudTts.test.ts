@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GeminiTtsReader, chapterToSpeechText, GEMINI_TTS_VOICES, DEFAULT_VOICE_ID } from "@/presentation/geminiTts";
+import { GoogleCloudTtsReader, chapterToSpeechText, GOOGLE_TTS_VOICES, DEFAULT_VOICE_ID } from "@/presentation/googleCloudTts";
 import { SYLLABUS } from "@/infrastructure/data/syllabus";
 import { CHAPTERS } from "@/domain/chapters";
 import { CONFIG } from "@/config";
@@ -42,24 +42,24 @@ function okResponse(chunks: string[]) {
   return { ok: true, json: async () => ({ chunks }) } as Response;
 }
 
-// base64 de amostra só para preencher o campo — o conteúdo real do áudio não importa
-// aqui, já que o Audio é totalmente mockado (o WAV já vem pronto do servidor/proxy).
-const FAKE_B64 = btoa("fake-wav-bytes");
+// base64 de "x" só para preencher o campo — o conteúdo real do áudio não importa aqui,
+// o Audio é totalmente mockado.
+const FAKE_B64 = btoa("fake-audio-bytes");
 
-describe("GeminiTtsReader", () => {
+describe("GoogleCloudTtsReader", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   it("supported é true quando fetch/Audio existem", () => {
     installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     expect(tts.supported).toBe(true);
   });
 
   it("speak(): vai para 'loading', chama o proxy com o texto/voz certos e headers de auth, depois toca e vira 'playing'", async () => {
     const { audios, fetchMock } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     const states: string[] = [];
     tts.onStateChange((s) => states.push(s));
 
@@ -82,7 +82,7 @@ describe("GeminiTtsReader", () => {
 
   it("toca múltiplos pedaços em sequência (onended avança para o próximo)", async () => {
     const { audios } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64, FAKE_B64, FAKE_B64])) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     await tts.speak("texto longo dividido em pedaços");
 
     expect(audios).toHaveLength(3);
@@ -103,7 +103,7 @@ describe("GeminiTtsReader", () => {
     installFakes({
       fetchImpl: vi.fn(async () => ({ ok: false, status: 500, json: async () => ({ error: "cota excedida" }) }) as Response),
     });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     const errors: string[] = [];
     tts.onError((msg) => errors.push(msg));
 
@@ -117,7 +117,7 @@ describe("GeminiTtsReader", () => {
 
   it("falha de rede (fetch rejeita): reporta erro e volta para idle", async () => {
     installFakes({ fetchImpl: vi.fn(async () => { throw new Error("Failed to fetch"); }) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     const errors: string[] = [];
     tts.onError((msg) => errors.push(msg));
 
@@ -132,7 +132,7 @@ describe("GeminiTtsReader", () => {
     const firstPromise = new Promise<Response>((r) => (resolveFirst = r));
     const fetchMock = vi.fn().mockReturnValueOnce(firstPromise).mockReturnValueOnce(Promise.resolve(okResponse([FAKE_B64])));
     const { audios } = installFakes({ fetchImpl: fetchMock as unknown as typeof fetch });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
 
     const p1 = tts.speak("primeiro"); // fica pendente
     const p2 = tts.speak("segundo"); // resolve antes do primeiro
@@ -146,7 +146,7 @@ describe("GeminiTtsReader", () => {
 
   it("togglePlayPause pausa/retoma o áudio atual", async () => {
     const { audios } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     await tts.speak("texto");
     expect(tts.state).toBe("playing");
 
@@ -161,7 +161,7 @@ describe("GeminiTtsReader", () => {
 
   it("stop() pausa tudo, revoga as blob URLs e volta para idle", async () => {
     installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64, FAKE_B64])) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     await tts.speak("texto");
 
     tts.stop();
@@ -172,7 +172,7 @@ describe("GeminiTtsReader", () => {
 
   it("setVolume/setRate aplicam ao vivo no áudio atual, sem nenhuma nova chamada de rede", async () => {
     const { audios, fetchMock } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
     await tts.speak("texto");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -186,26 +186,26 @@ describe("GeminiTtsReader", () => {
 
   it("setVoicePreference toca uma amostra quando ocioso, e reinicia o capítulo quando já estava tocando", async () => {
     const { fetchMock } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
-    const tts = new GeminiTtsReader();
+    const tts = new GoogleCloudTtsReader();
 
-    tts.setVoicePreference("Puck");
+    tts.setVoicePreference("pt-BR-Neural2-B");
     await Promise.resolve(); // deixa a promise interna de speak() assentar
     await new Promise((r) => setTimeout(r, 0));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).text).toBe("Esta é a voz selecionada.");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).voiceName).toBe("Puck");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).voiceName).toBe("pt-BR-Neural2-B");
 
     await tts.speak("resumo do capítulo");
-    tts.setVoicePreference("Charon");
+    tts.setVoicePreference("pt-BR-Wavenet-A");
     await new Promise((r) => setTimeout(r, 0));
     const lastCall = fetchMock.mock.calls[fetchMock.mock.calls.length - 1]!;
     expect(JSON.parse(lastCall[1].body).text).toBe("resumo do capítulo");
-    expect(JSON.parse(lastCall[1].body).voiceName).toBe("Charon");
+    expect(JSON.parse(lastCall[1].body).voiceName).toBe("pt-BR-Wavenet-A");
   });
 
-  it("GEMINI_TTS_VOICES tem um catálogo não vazio e DEFAULT_VOICE_ID é um dos ids listados", () => {
-    expect(GEMINI_TTS_VOICES.length).toBeGreaterThan(0);
-    expect(GEMINI_TTS_VOICES.some((v) => v.id === DEFAULT_VOICE_ID)).toBe(true);
+  it("GOOGLE_TTS_VOICES tem um catálogo não vazio e DEFAULT_VOICE_ID é um dos ids listados", () => {
+    expect(GOOGLE_TTS_VOICES.length).toBeGreaterThan(0);
+    expect(GOOGLE_TTS_VOICES.some((v) => v.id === DEFAULT_VOICE_ID)).toBe(true);
   });
 
   it("chapterToSpeechText strips HTML tags and includes chapter name + all section labels", () => {

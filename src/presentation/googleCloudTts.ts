@@ -22,21 +22,18 @@ export interface TtsVoiceOption {
   label: string;
 }
 
-/**
- * Catálogo curado de vozes do Gemini TTS (nomes fixos definidos pela API, sem variante
- * por idioma — o modelo detecta o idioma pelo texto). São vozes neurais nativas, mais
- * naturais que as opções do sistema operacional ou da API clássica de Cloud TTS.
- */
-export const GEMINI_TTS_VOICES: TtsVoiceOption[] = [
-  { id: "Kore", label: "Kore — firme e clara (recomendada)" },
-  { id: "Aoede", label: "Aoede — suave" },
-  { id: "Puck", label: "Puck — animada" },
-  { id: "Charon", label: "Charon — grave" },
-  { id: "Fenrir", label: "Fenrir — enérgica" },
-  { id: "Leda", label: "Leda — jovem" },
-  { id: "Zephyr", label: "Zephyr — leve" },
+/** Catálogo curado de vozes pt-BR do Google Cloud TTS. Neural2/WaveNet soam bem mais
+ * naturais que as vozes padrão do sistema operacional; Standard é a opção mais econômica. */
+export const GOOGLE_TTS_VOICES: TtsVoiceOption[] = [
+  { id: "pt-BR-Neural2-A", label: "Neural2 A — feminina (recomendada)" },
+  { id: "pt-BR-Neural2-B", label: "Neural2 B — masculina" },
+  { id: "pt-BR-Neural2-C", label: "Neural2 C — feminina" },
+  { id: "pt-BR-Wavenet-A", label: "WaveNet A — feminina" },
+  { id: "pt-BR-Wavenet-B", label: "WaveNet B — masculina" },
+  { id: "pt-BR-Standard-A", label: "Standard A — feminina (mais econômica)" },
+  { id: "pt-BR-Standard-B", label: "Standard B — masculina (mais econômica)" },
 ];
-export const DEFAULT_VOICE_ID = GEMINI_TTS_VOICES[0].id;
+export const DEFAULT_VOICE_ID = GOOGLE_TTS_VOICES[0].id;
 
 function ttsEndpoint(): string {
   return `${CONFIG.supabaseUrl}/functions/v1/tts`;
@@ -50,14 +47,14 @@ function base64ToBlob(base64: string, mime: string): Blob {
 }
 
 /**
- * Cliente do proxy de Gemini TTS (Supabase Edge Function em `supabase/functions/tts`).
- * A API key do Gemini nunca chega ao navegador — fica só no servidor da function.
+ * Cliente do proxy de Google Cloud TTS (Supabase Edge Function em `supabase/functions/tts`).
+ * A API key do Google nunca chega ao navegador — fica só no servidor da function.
  *
  * Reproduz o áudio com `<audio>` em vez da Web Speech API: isso permite trocar volume e
- * velocidade *ao vivo*, sem reemitir a fala (`<audio>.volume`/`.playbackRate` bastam —
- * ver também `googleCloudTtsArchived.ts`, que usa a mesma abordagem).
+ * velocidade *ao vivo*, sem reemitir a fala (a versão anterior, em `tts.ts`, precisava
+ * reiniciar a leitura a cada mudança — aqui `<audio>.volume`/`.playbackRate` bastam).
  */
-export class GeminiTtsReader {
+export class GoogleCloudTtsReader {
   readonly supported = typeof window !== "undefined" && typeof fetch !== "undefined" && typeof Audio !== "undefined";
   state: TtsState = "idle";
   volume = 1;
@@ -138,7 +135,7 @@ export class GeminiTtsReader {
     }
 
     this.queue = chunks.map((base64) => {
-      const url = URL.createObjectURL(base64ToBlob(base64, "audio/wav"));
+      const url = URL.createObjectURL(base64ToBlob(base64, "audio/mpeg"));
       const audio = new Audio(url);
       audio.dataset.blobUrl = url;
       audio.volume = this.volume;
