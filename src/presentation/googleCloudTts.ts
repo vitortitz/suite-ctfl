@@ -3,12 +3,24 @@ import { CONFIG } from "@/config";
 
 export type TtsState = "idle" | "loading" | "playing" | "paused";
 
-/** Extrai o texto falado de um capítulo: nome, introdução e cada seção (rótulo + conteúdo sem HTML). */
+/**
+ * Extrai o texto falado de um capítulo: nome, introdução e cada seção (rótulo + conteúdo
+ * sem HTML). NÃO é usada em tempo de execução pelo player — o conteúdo do syllabus é fixo,
+ * então o áudio de cada capítulo já foi gerado uma vez (offline, por um admin) e publicado
+ * como arquivo estático. Esta função só serve para regenerar esse áudio se o texto do
+ * syllabus mudar; veja `supabase/functions/tts` e `docs/SETUP.md`.
+ */
 export function chapterToSpeechText(chapterName: string, chapter: ChapterSyllabus): string {
   const strip = (html: string): string => {
+    // Itens de lista (<li>, <dt>/<dd>) e blocos (<p>, <div>) viram texto corrido sem
+    // nenhuma pontuação entre eles quando só se lê o textContent — um parágrafo de lista
+    // inteiro sem ponto final vira "uma frase só" longa demais, que o Google TTS rejeita
+    // ("sentences that are too long"). Insere um ponto antes de cada fechamento de bloco
+    // para garantir uma pausa/quebra de frase real entre os itens.
+    const withBreaks = html.replace(/<\/(li|dt|dd|p|div)>/gi, ".$&");
     const div = document.createElement("div");
-    div.innerHTML = html;
-    return (div.textContent ?? "").replace(/\s+/g, " ").trim();
+    div.innerHTML = withBreaks;
+    return (div.textContent ?? "").replace(/\.{2,}/g, ".").replace(/\s+/g, " ").trim();
   };
   const parts = [`Capítulo: ${chapterName}.`, chapter.intro];
   for (const sec of chapter.sections) {
@@ -17,26 +29,8 @@ export function chapterToSpeechText(chapterName: string, chapter: ChapterSyllabu
   return parts.join(" ");
 }
 
-export interface TtsVoiceOption {
-  id: string;
-  label: string;
-}
-
-/** Catálogo curado de vozes pt-BR do Google Cloud TTS. Neural2/WaveNet soam bem mais
- * naturais que as vozes padrão do sistema operacional; Standard é a opção mais econômica. */
-export const GOOGLE_TTS_VOICES: TtsVoiceOption[] = [
-  { id: "pt-BR-Neural2-A", label: "Neural2 A — feminina (recomendada)" },
-  { id: "pt-BR-Neural2-B", label: "Neural2 B — masculina" },
-  { id: "pt-BR-Neural2-C", label: "Neural2 C — feminina" },
-  { id: "pt-BR-Wavenet-A", label: "WaveNet A — feminina" },
-  { id: "pt-BR-Wavenet-B", label: "WaveNet B — masculina" },
-  { id: "pt-BR-Standard-A", label: "Standard A — feminina (mais econômica)" },
-  { id: "pt-BR-Standard-B", label: "Standard B — masculina (mais econômica)" },
-];
-export const DEFAULT_VOICE_ID = GOOGLE_TTS_VOICES[0].id;
-
-function ttsEndpoint(): string {
-  return `${CONFIG.supabaseUrl}/functions/v1/tts`;
+function staticAudioUrl(chapterId: string): string {
+  return `${CONFIG.supabaseUrl}/storage/v1/object/public/tts-static/${chapterId}.json`;
 }
 
 function base64ToBlob(base64: string, mime: string): Blob {
@@ -47,23 +41,19 @@ function base64ToBlob(base64: string, mime: string): Blob {
 }
 
 /**
- * Cliente do proxy de Google Cloud TTS (Supabase Edge Function em `supabase/functions/tts`).
- * A API key do Google nunca chega ao navegador — fica só no servidor da function.
- *
- * Reproduz o áudio com `<audio>` em vez da Web Speech API: isso permite trocar volume e
- * velocidade *ao vivo*, sem reemitir a fala (a versão anterior, em `tts.ts`, precisava
- * reiniciar a leitura a cada mudança — aqui `<audio>.volume`/`.playbackRate` bastam).
+ * Toca o áudio pré-gerado (estático) de um capítulo, publicado em um bucket público do
+ * Supabase Storage. Não chama nenhuma API de IA em tempo de execução — o navegador só
+ * busca um arquivo JSON já pronto (como buscar qualquer outro asset estático) e o
+ * reproduz com `<audio>`. Volume e velocidade são aplicados ao vivo via
+ * `<audio>.volume`/`.playbackRate`, sem nenhuma requisição adicional.
  */
 export class GoogleCloudTtsReader {
   readonly supported = typeof window !== "undefined" && typeof fetch !== "undefined" && typeof Audio !== "undefined";
   state: TtsState = "idle";
   volume = 1;
-  /** Velocidade de reprodução: 1 = normal. Aplicada via `<audio>.playbackRate`, sem custo de rede. */
   rate = 1;
-  voiceId: string = DEFAULT_VOICE_ID;
   lastError: string | null = null;
 
-  private lastText = "";
   private gen = 0;
   private queue: HTMLAudioElement[] = [];
   private queueIndex = 0;
@@ -103,9 +93,9 @@ export class GoogleCloudTtsReader {
     this.queueIndex = 0;
   }
 
-  async speak(text: string): Promise<void> {
-    if (!this.supported || !text.trim()) return;
-    this.lastText = text;
+  /** Busca e toca o áudio estático do capítulo (`chapterId`, ex.: "chapter-1"). */
+  async play(chapterId: string): Promise<void> {
+    if (!this.supported || !chapterId) return;
     this.lastError = null;
     this.gen++;
     const myGen = this.gen;
@@ -114,23 +104,16 @@ export class GoogleCloudTtsReader {
 
     let chunks: string[];
     try {
-      const res = await fetch(ttsEndpoint(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${CONFIG.supabaseAnonKey}` },
-        body: JSON.stringify({ text, voiceName: this.voiceId }),
-      });
+      const res = await fetch(staticAudioUrl(chapterId));
       if (myGen !== this.gen) return; // outra chamada substituiu esta enquanto aguardava
-      if (!res.ok) {
-        const detail = await res.json().catch(() => null);
-        throw new Error(detail?.error ?? `Falha ao gerar áudio (HTTP ${res.status}).`);
-      }
+      if (!res.ok) throw new Error(`Áudio deste capítulo ainda não foi gerado (HTTP ${res.status}).`);
       const data = (await res.json()) as { chunks?: string[] };
       if (myGen !== this.gen) return;
-      if (!Array.isArray(data.chunks) || data.chunks.length === 0) throw new Error("Resposta vazia do servidor de áudio.");
+      if (!Array.isArray(data.chunks) || data.chunks.length === 0) throw new Error("Arquivo de áudio vazio.");
       chunks = data.chunks;
     } catch (err) {
       if (myGen !== this.gen) return;
-      this.fail(err instanceof Error ? err.message : "Não foi possível gerar o áudio.");
+      this.fail(err instanceof Error ? err.message : "Não foi possível carregar o áudio.");
       return;
     }
 
@@ -160,7 +143,7 @@ export class GoogleCloudTtsReader {
     };
     audio.onerror = () => {
       if (myGen !== this.gen) return;
-      this.fail("Falha ao reproduzir o áudio gerado.");
+      this.fail("Falha ao reproduzir o áudio.");
     };
     audio
       .play()
@@ -190,23 +173,15 @@ export class GoogleCloudTtsReader {
     this.setState("idle");
   }
 
-  /** Ao vivo: ajusta o volume do áudio atual sem precisar gerar tudo de novo. */
+  /** Ao vivo: ajusta o volume do áudio atual, sem nenhuma requisição de rede. */
   setVolume(v: number): void {
     this.volume = Math.min(1, Math.max(0, v));
     for (const audio of this.queue) audio.volume = this.volume;
   }
 
-  /** Ao vivo: ajusta a velocidade de reprodução sem precisar gerar tudo de novo. */
+  /** Ao vivo: ajusta a velocidade de reprodução, sem nenhuma requisição de rede. */
   setRate(r: number): void {
     this.rate = Math.min(2, Math.max(0.5, r));
     for (const audio of this.queue) audio.playbackRate = this.rate;
-  }
-
-  /** Troca a voz. Sempre toca algo audível: reinicia o capítulo atual se já estava lendo,
-   * ou uma frase curta de amostra se estava ocioso (senão a troca não daria retorno nenhum). */
-  setVoicePreference(voiceId: string): void {
-    this.voiceId = voiceId;
-    if (this.state !== "idle" && this.lastText) void this.speak(this.lastText);
-    else void this.speak("Esta é a voz selecionada.");
   }
 }

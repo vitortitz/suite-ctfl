@@ -1,6 +1,5 @@
 import type { Chapter, ChapterId } from "@/domain/types";
 import type { ChapterSyllabus, KLevel } from "@/infrastructure/data/syllabus";
-import { GOOGLE_TTS_VOICES, DEFAULT_VOICE_ID } from "../googleCloudTts";
 import { esc } from "../dom";
 
 export interface StudyProps {
@@ -63,14 +62,6 @@ export function renderStudy(p: StudyProps): string {
         <option value="1.5">1.5×</option>
         <option value="1.75">1.75×</option>
         <option value="2">2×</option>
-      </select>
-    </label>
-    <label class="tts-field">
-      <span class="tts-vol-label">Voz</span>
-      <select id="tts-voice" aria-label="Voz da narração">
-        ${GOOGLE_TTS_VOICES.map(
-          (v) => `<option value="${v.id}" ${v.id === DEFAULT_VOICE_ID ? "selected" : ""}>${esc(v.label)}</option>`,
-        ).join("")}
       </select>
     </label>
     <span class="small muted" id="tts-status" aria-live="polite"></span>

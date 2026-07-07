@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GoogleCloudTtsReader, chapterToSpeechText, GOOGLE_TTS_VOICES, DEFAULT_VOICE_ID } from "@/presentation/googleCloudTts";
+import { GoogleCloudTtsReader, chapterToSpeechText } from "@/presentation/googleCloudTts";
 import { SYLLABUS } from "@/infrastructure/data/syllabus";
 import { CHAPTERS } from "@/domain/chapters";
 import { CONFIG } from "@/config";
@@ -42,11 +42,11 @@ function okResponse(chunks: string[]) {
   return { ok: true, json: async () => ({ chunks }) } as Response;
 }
 
-// base64 de "x" só para preencher o campo — o conteúdo real do áudio não importa aqui,
-// o Audio é totalmente mockado.
-const FAKE_B64 = btoa("fake-audio-bytes");
+// base64 de amostra só para preencher o campo — o conteúdo real do áudio não importa
+// aqui, já que o Audio é totalmente mockado (o MP3 já vem pronto do arquivo estático).
+const FAKE_B64 = btoa("fake-mp3-bytes");
 
-describe("GoogleCloudTtsReader", () => {
+describe("GoogleCloudTtsReader (áudio estático pré-gerado, sem chamada de API em tempo real)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -57,22 +57,20 @@ describe("GoogleCloudTtsReader", () => {
     expect(tts.supported).toBe(true);
   });
 
-  it("speak(): vai para 'loading', chama o proxy com o texto/voz certos e headers de auth, depois toca e vira 'playing'", async () => {
+  it("play(): busca o JSON estático do capítulo (GET simples, sem body/Authorization), toca e vira 'playing'", async () => {
     const { audios, fetchMock } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
     const tts = new GoogleCloudTtsReader();
     const states: string[] = [];
     tts.onStateChange((s) => states.push(s));
 
-    const promise = tts.speak("Olá, mundo.");
+    const promise = tts.play("chapter-1");
     expect(tts.state).toBe("loading");
-
     await promise;
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe(`${CONFIG.supabaseUrl}/functions/v1/tts`);
-    expect(init.headers.Authorization).toBe(`Bearer ${CONFIG.supabaseAnonKey}`);
-    expect(JSON.parse(init.body)).toEqual({ text: "Olá, mundo.", voiceName: DEFAULT_VOICE_ID });
+    expect(url).toBe(`${CONFIG.supabaseUrl}/storage/v1/object/public/tts-static/chapter-1.json`);
+    expect(init).toBeUndefined(); // GET puro: nenhum method/body/Authorization — é um asset público estático
 
     expect(audios).toHaveLength(1);
     expect(tts.state).toBe("playing");
@@ -83,13 +81,13 @@ describe("GoogleCloudTtsReader", () => {
   it("toca múltiplos pedaços em sequência (onended avança para o próximo)", async () => {
     const { audios } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64, FAKE_B64, FAKE_B64])) });
     const tts = new GoogleCloudTtsReader();
-    await tts.speak("texto longo dividido em pedaços");
+    await tts.play("chapter-5");
 
     expect(audios).toHaveLength(3);
     expect(tts.state).toBe("playing");
 
     audios[0].onended?.();
-    expect(audios[1].paused).toBe(false); // segundo pedaço começou a tocar
+    expect(audios[1].paused).toBe(false);
     expect(tts.state).toBe("playing");
 
     audios[1].onended?.();
@@ -99,43 +97,44 @@ describe("GoogleCloudTtsReader", () => {
     expect(tts.state).toBe("idle"); // acabou a fila
   });
 
-  it("onerror da resposta HTTP: reporta a mensagem de erro do servidor e volta para idle", async () => {
+  it("HTTP não-ok (ex.: capítulo ainda não publicado): reporta erro e volta para idle", async () => {
+    installFakes({ fetchImpl: vi.fn(async () => ({ ok: false, status: 404 }) as Response) });
+    const tts = new GoogleCloudTtsReader();
+    const errors: string[] = [];
+    tts.onError((msg) => errors.push(msg));
+
+    await tts.play("chapter-1");
+
+    expect(tts.state).toBe("idle");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain("404");
+  });
+
+  it("falha de rede (fetch rejeita): reporta erro e volta para idle", async () => {
     installFakes({
-      fetchImpl: vi.fn(async () => ({ ok: false, status: 500, json: async () => ({ error: "cota excedida" }) }) as Response),
+      fetchImpl: vi.fn(async () => {
+        throw new Error("Failed to fetch");
+      }),
     });
     const tts = new GoogleCloudTtsReader();
     const errors: string[] = [];
     tts.onError((msg) => errors.push(msg));
 
-    await tts.speak("texto");
-
-    expect(tts.state).toBe("idle");
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain("cota excedida");
-    expect(tts.lastError).toBe(errors[0]);
-  });
-
-  it("falha de rede (fetch rejeita): reporta erro e volta para idle", async () => {
-    installFakes({ fetchImpl: vi.fn(async () => { throw new Error("Failed to fetch"); }) });
-    const tts = new GoogleCloudTtsReader();
-    const errors: string[] = [];
-    tts.onError((msg) => errors.push(msg));
-
-    await tts.speak("texto");
+    await tts.play("chapter-1");
 
     expect(tts.state).toBe("idle");
     expect(errors[0]).toContain("Failed to fetch");
   });
 
-  it("uma chamada mais nova descarta o resultado de uma chamada anterior ainda pendente (corrida)", async () => {
+  it("uma chamada mais nova descarta o resultado de uma chamada anterior ainda pendente (corrida ao trocar de capítulo rápido)", async () => {
     let resolveFirst!: (v: Response) => void;
     const firstPromise = new Promise<Response>((r) => (resolveFirst = r));
     const fetchMock = vi.fn().mockReturnValueOnce(firstPromise).mockReturnValueOnce(Promise.resolve(okResponse([FAKE_B64])));
     const { audios } = installFakes({ fetchImpl: fetchMock as unknown as typeof fetch });
     const tts = new GoogleCloudTtsReader();
 
-    const p1 = tts.speak("primeiro"); // fica pendente
-    const p2 = tts.speak("segundo"); // resolve antes do primeiro
+    const p1 = tts.play("chapter-1"); // fica pendente
+    const p2 = tts.play("chapter-2"); // resolve antes do primeiro
     await p2;
     expect(audios).toHaveLength(1); // só o segundo pedido tocou algo
 
@@ -147,7 +146,7 @@ describe("GoogleCloudTtsReader", () => {
   it("togglePlayPause pausa/retoma o áudio atual", async () => {
     const { audios } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
     const tts = new GoogleCloudTtsReader();
-    await tts.speak("texto");
+    await tts.play("chapter-1");
     expect(tts.state).toBe("playing");
 
     tts.togglePlayPause();
@@ -162,7 +161,7 @@ describe("GoogleCloudTtsReader", () => {
   it("stop() pausa tudo, revoga as blob URLs e volta para idle", async () => {
     installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64, FAKE_B64])) });
     const tts = new GoogleCloudTtsReader();
-    await tts.speak("texto");
+    await tts.play("chapter-1");
 
     tts.stop();
 
@@ -170,10 +169,10 @@ describe("GoogleCloudTtsReader", () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
   });
 
-  it("setVolume/setRate aplicam ao vivo no áudio atual, sem nenhuma nova chamada de rede", async () => {
+  it("setVolume/setRate aplicam ao vivo no áudio atual, sem nenhuma nova busca de rede", async () => {
     const { audios, fetchMock } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
     const tts = new GoogleCloudTtsReader();
-    await tts.speak("texto");
+    await tts.play("chapter-1");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     tts.setVolume(0.3);
@@ -181,34 +180,10 @@ describe("GoogleCloudTtsReader", () => {
 
     expect(audios[0].volume).toBe(0.3);
     expect(audios[0].playbackRate).toBe(1.5);
-    expect(fetchMock).toHaveBeenCalledTimes(1); // nenhuma nova requisição
+    expect(fetchMock).toHaveBeenCalledTimes(1); // nenhuma nova requisição — só ajusta o <audio> já carregado
   });
 
-  it("setVoicePreference toca uma amostra quando ocioso, e reinicia o capítulo quando já estava tocando", async () => {
-    const { fetchMock } = installFakes({ fetchImpl: vi.fn(async () => okResponse([FAKE_B64])) });
-    const tts = new GoogleCloudTtsReader();
-
-    tts.setVoicePreference("pt-BR-Neural2-B");
-    await Promise.resolve(); // deixa a promise interna de speak() assentar
-    await new Promise((r) => setTimeout(r, 0));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).text).toBe("Esta é a voz selecionada.");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).voiceName).toBe("pt-BR-Neural2-B");
-
-    await tts.speak("resumo do capítulo");
-    tts.setVoicePreference("pt-BR-Wavenet-A");
-    await new Promise((r) => setTimeout(r, 0));
-    const lastCall = fetchMock.mock.calls[fetchMock.mock.calls.length - 1]!;
-    expect(JSON.parse(lastCall[1].body).text).toBe("resumo do capítulo");
-    expect(JSON.parse(lastCall[1].body).voiceName).toBe("pt-BR-Wavenet-A");
-  });
-
-  it("GOOGLE_TTS_VOICES tem um catálogo não vazio e DEFAULT_VOICE_ID é um dos ids listados", () => {
-    expect(GOOGLE_TTS_VOICES.length).toBeGreaterThan(0);
-    expect(GOOGLE_TTS_VOICES.some((v) => v.id === DEFAULT_VOICE_ID)).toBe(true);
-  });
-
-  it("chapterToSpeechText strips HTML tags and includes chapter name + all section labels", () => {
+  it("chapterToSpeechText (usada só pelo script de regeneração, não pelo player) insere pontuação entre itens de lista para o Google TTS não rejeitar frases longas demais", () => {
     const name = CHAPTERS[1].name;
     const text = chapterToSpeechText(name, SYLLABUS[1]);
     expect(text).toContain("Capítulo: Fundamentos de Teste.");

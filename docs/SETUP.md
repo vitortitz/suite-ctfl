@@ -89,20 +89,25 @@ pelo app é o id do usuário autenticado (`auth.uid()`), então nada mais precis
 
 ---
 
-## Leitura em voz alta (Google Cloud Text-to-Speech)
+## Leitura em voz alta (áudio estático pré-gerado)
 
-A aba Estudo tem um botão para ouvir o resumo do capítulo em voz alta. Isso usa o
-**Google Cloud Text-to-Speech** (vozes Neural2/WaveNet/Standard) por trás de uma
-**Supabase Edge Function** (`supabase/functions/tts`) — a API key do Google fica só
-no servidor, nunca no navegador. A function faz **cache** do áudio gerado (um mesmo
-capítulo/voz nunca é sintetizado duas vezes) e aplica uma **cota diária de
-caracteres** como trava de segurança — o objetivo é manter o uso dentro do limite
-gratuito do Google (1 milhão de caracteres/mês para vozes Neural2/WaveNet). Detalhes
-no final desta seção.
+A aba Estudo tem um botão para ouvir o resumo do capítulo em voz alta. Como o
+conteúdo do syllabus é **fixo** (6 capítulos, texto não muda), o áudio de cada
+capítulo é **gerado uma única vez** (offline, por um admin — nunca pelo clique do
+usuário) com o **Google Cloud Text-to-Speech** (voz `pt-BR-Chirp3-HD-Charon`, a mais
+natural disponível) e publicado como arquivo estático num bucket público do Supabase
+Storage. Em tempo de execução, o navegador só faz um **GET** nesse arquivo — como
+buscar qualquer asset estático — e toca com `<audio>`. **Não existe nenhuma chamada
+de API de IA no front-end nem por clique do usuário**: o custo de geração acontece
+uma vez, adiantado, e depois é sempre zero.
 
 > Outras implementações (Web Speech API do navegador e Gemini TTS) foram mantidas no
 > repositório como referência/fallback futuro, mas não são usadas pela UI: veja
 > `src/presentation/tts.ts` e `src/presentation/geminiTtsArchived.ts`.
+
+A function `supabase/functions/tts` continua existindo, mas só como **ferramenta de
+(re)geração**: rode-a manualmente (via `curl`, com um segredo de admin) apenas se o
+texto de um capítulo mudar no futuro. Ela nunca é chamada pelo app em produção.
 
 ### 1. Criar um projeto no Google Cloud (pule se já tiver um)
 1. Acesse <https://console.cloud.google.com/> e faça login com sua conta Google.
@@ -114,31 +119,30 @@ no final desta seção.
 1. Com o projeto selecionado, acesse
    <https://console.cloud.google.com/apis/library/texttospeech.googleapis.com>.
 2. Clique em **Ativar** (Enable). Se for pedido para configurar cobrança
-   (billing), você precisa vincular um cartão — a API tem cota gratuita mensal
-   (4 milhões de caracteres/mês para vozes Standard; 1 milhão para
-   WaveNet/Neural2), mas o Google exige billing habilitado mesmo para usar a
-   cota grátis.
+   (billing), você precisa vincular um cartão — a API tem cota gratuita mensal (1
+   milhão de caracteres/mês para vozes Chirp3-HD/Neural2/WaveNet), mas o Google
+   exige billing habilitado mesmo para usar a cota grátis.
 
 ### 3. Gerar a API key
 1. Acesse **APIs e Serviços → Credenciais**:
    <https://console.cloud.google.com/apis/credentials>.
 2. Clique em **+ Criar credenciais → Chave de API**.
-3. Uma key é gerada na hora — copie-a (você vai usar no passo 6, nunca no código).
+3. Uma key é gerada na hora — copie-a (você vai usar no passo 8, nunca no código).
 
 ### 4. Restringir a key (importante)
 Ainda na tela de credenciais, clique na key recém-criada para editá-la:
 1. Em **Restrições de API**, marque **Restringir chave** e selecione só a
    **Cloud Text-to-Speech API**. Isso impede que a key, se vazar, seja usada
    para acessar qualquer outro serviço do seu projeto.
-2. Em **Restrições de aplicativo**, como essa key só vai ser usada pelo servidor
-   (Edge Function, nunca pelo navegador), pode deixar em **Nenhuma** — restrição
-   por referenciador HTTP não faz sentido aqui, pois não é chamada do browser.
+2. Em **Restrições de aplicativo**, como essa key só é usada pelo servidor (na
+   geração offline, nunca pelo navegador), pode deixar em **Nenhuma**.
 3. Clique em **Salvar**.
 
 ### 5. Configurar um alerta de orçamento
 Em <https://console.cloud.google.com/billing/budgets>, crie um orçamento (ex.:
-R$ 20) com alerta por e-mail em 50%/90%/100%. Isso evita surpresa caso a cota
-gratuita seja excedida por qualquer motivo.
+R$ 20) com alerta por e-mail em 50%/90%/100%. Como a geração é um evento único (não
+recorrente), o custo real fica bem abaixo disso — o alerta é só uma margem de
+segurança.
 
 ### 6. Instalar e autenticar o Supabase CLI
 ```bash
@@ -153,15 +157,20 @@ O `project_id` já está em `supabase/config.toml` (o mesmo projeto de
 supabase link --project-ref rtsescugtwwgxgkddasi
 ```
 
-### 8. Guardar a key do Google como secret (nunca no código)
+### 8. Guardar os secrets (nunca no código)
 ```bash
 supabase secrets set GOOGLE_TTS_API_KEY=SUA_KEY_AQUI
+supabase secrets set TTS_ADMIN_SECRET=UM_VALOR_ALEATORIO_SEU
 ```
+O `TTS_ADMIN_SECRET` é seu, escolha qualquer string aleatória longa (ex.:
+`openssl rand -hex 24` ou `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`)
+— é o que autoriza chamar a function de (re)geração; guarde-o, você vai usar toda
+vez que regenerar um capítulo.
 
-### 9. Criar a tabela de cota e o bucket de cache
+### 9. Criar a tabela de cota e o bucket público de áudio
 No **SQL Editor** do Supabase, rode:
 ```sql
--- Cota diária de caracteres enviados ao Google (não conta acertos de cache).
+-- Trava de segurança residual (evita gasto grande por engano, ex.: script em loop).
 create table if not exists public.tts_usage (
   day date primary key,
   chars_used integer not null default 0
@@ -184,47 +193,38 @@ begin
   return new_total;
 end;
 $$;
-```
-E crie o bucket de cache de áudio (**Storage → New bucket**, nome `tts-cache`,
-**privado** — a function usa a service role para ler/escrever nele, o navegador nunca
-acessa diretamente):
-```sql
+
+-- Bucket PÚBLICO: é dele que o navegador busca o áudio pronto, direto, sem passar
+-- pela function nem por nenhuma API key em tempo de execução.
 insert into storage.buckets (id, name, public)
-values ('tts-cache', 'tts-cache', false)
-on conflict (id) do nothing;
+values ('tts-static', 'tts-static', true)
+on conflict (id) do update set public = true;
 ```
 
-### 10. Publicar a function
+### 10. Publicar a function de geração
 ```bash
 supabase functions deploy tts --no-verify-jwt
 ```
+O `--no-verify-jwt` é necessário para o preflight `OPTIONS` funcionar (o gateway do
+Supabase, por padrão, exige um JWT em toda requisição — inclusive no preflight, que
+nunca carrega `Authorization` — e rejeita antes do código rodar). A proteção real
+agora é o header `x-admin-secret` (passo 8): sem ele, a function responde 401.
 
-O `--no-verify-jwt` é **obrigatório**: sem ele, o gateway do Supabase exige um JWT em
-toda requisição, inclusive no preflight `OPTIONS` que o navegador manda antes do
-`POST` — e o preflight nunca carrega `Authorization`. O resultado é exatamente o erro
-"Response to preflight request doesn't pass access control check" no console do
-navegador. (`supabase/config.toml` já define `verify_jwt = false` para essa function;
-a flag no deploy garante que isso é respeitado mesmo se o CLI ignorar o arquivo.)
+### 11. Gerar (ou regenerar) o áudio de um capítulo
+```bash
+curl -X POST https://rtsescugtwwgxgkddasi.supabase.co/functions/v1/tts \
+  -H "Content-Type: application/json" \
+  -H "x-admin-secret: SEU_TTS_ADMIN_SECRET" \
+  -d '{"id":"chapter-1","text":"...texto do capítulo...","voiceName":"pt-BR-Chirp3-HD-Charon"}'
+```
+- `id` vira o nome do arquivo publicado: `chapter-1.json`, `chapter-2.json` etc. — é
+  esse mesmo id que o front-end busca (`chapter-${numeroDoCapítulo}`).
+- `text` é o texto puro do capítulo — gere-o com `chapterToSpeechText()` (em
+  `src/presentation/googleCloudTts.ts`), que já cuida de inserir pontuação entre
+  itens de lista para o Google não rejeitar "frases longas demais".
+- Rode uma vez por capítulo (id `chapter-1` a `chapter-6`). Só precisa rodar de novo
+  se o texto daquele capítulo mudar no `syllabus.ts`.
 
-Como a function fica acessível a quem souber a URL, a proteção real aqui é a key do
-Google nunca sair do servidor (passo 4) mais o alerta de orçamento (passo 5) — não
-vale a pena tentar "esconder" a URL atrás de uma checagem de header, já que a anon
-key do Supabase é pública por natureza (embutida no bundle do app) e não daria
-segurança de verdade.
-
-Pronto — o botão "Ouvir resumo do capítulo" na aba Estudo passa a funcionar. Se a
-function não estiver implantada (ou a key não estiver configurada), o app mostra uma
-mensagem de erro em vez de travar.
-
-### Cache e cota diária (economia de caracteres)
-- **Cache**: antes de chamar o Google, a function calcula um hash (SHA-256 da voz +
-  texto) e verifica se aquele áudio já existe no bucket `tts-cache`. Como os capítulos
-  do syllabus são um conjunto fixo, depois da primeira leitura de cada capítulo/voz o
-  custo cai para **zero** — todo mundo que pedir aquele mesmo capítulo depois só lê do
-  cache, sem gastar nenhum caractere da cota do Google.
-- **Cota diária**: só conta o que de fato é enviado ao Google (nunca os acertos de
-  cache), contra um limite de **50.000 caracteres/dia** (`DAILY_CHAR_LIMIT` em
-  `supabase/functions/tts/index.ts`) — bem abaixo do 1 milhão/mês gratuito de vozes
-  Neural2/WaveNet, como margem de segurança. Se ultrapassar, a function responde 429
-  com a mensagem "Limite diário de áudio atingido. Você ainda pode ler o resumo em
-  texto abaixo!", que aparece automaticamente no status da leitura.
+Pronto — o botão "Ouvir resumo do capítulo" na aba Estudo passa a tocar o áudio
+publicado. Se o arquivo daquele capítulo ainda não existir no bucket, o app mostra
+uma mensagem de erro em vez de travar.

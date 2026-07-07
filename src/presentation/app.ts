@@ -27,7 +27,7 @@ import { renderStudy } from "./views/studyView";
 import { renderProgress } from "./views/progressView";
 import { renderExercises } from "./views/exercisesView";
 import { renderAuth } from "./views/authView";
-import { GoogleCloudTtsReader, chapterToSpeechText, type TtsState } from "./googleCloudTts";
+import { GoogleCloudTtsReader, type TtsState } from "./googleCloudTts";
 
 export interface AppDeps {
   auth: AuthService;
@@ -397,7 +397,6 @@ export class App {
     const volumeInput = this.view.querySelector<HTMLInputElement>("#tts-volume")!;
     const volumeValue = this.view.querySelector<HTMLElement>("#tts-volume-value")!;
     const rateSelect = this.view.querySelector<HTMLSelectElement>("#tts-rate")!;
-    const voiceSelect = this.view.querySelector<HTMLSelectElement>("#tts-voice")!;
     const statusEl = this.view.querySelector<HTMLElement>("#tts-status")!;
 
     if (!this.tts.supported) {
@@ -405,7 +404,6 @@ export class App {
       toggleBtn.textContent = "Leitura em voz alta indisponível neste navegador";
       volumeInput.disabled = true;
       rateSelect.disabled = true;
-      voiceSelect.disabled = true;
       return;
     }
 
@@ -417,7 +415,6 @@ export class App {
     volumeInput.value = String(Math.round(this.tts.volume * 100));
     updateVolumeLabel();
     rateSelect.value = String(this.tts.rate);
-    voiceSelect.value = this.tts.voiceId;
 
     const updateUi = (state: TtsState): void => {
       stopBtn.hidden = state === "idle";
@@ -445,8 +442,7 @@ export class App {
 
     toggleBtn.addEventListener("click", () => {
       if (this.tts.state === "idle") {
-        const chapterName = CHAPTERS[this.studyChapter].name;
-        void this.tts.speak(chapterToSpeechText(chapterName, this.deps.syllabus[this.studyChapter]));
+        void this.tts.play(`chapter-${this.studyChapter}`);
       } else {
         this.tts.togglePlayPause();
       }
@@ -459,7 +455,6 @@ export class App {
       this.tts.setVolume(Number(volumeInput.value) / 100);
     });
     rateSelect.addEventListener("change", () => this.tts.setRate(Number(rateSelect.value)));
-    voiceSelect.addEventListener("change", () => this.tts.setVoicePreference(voiceSelect.value));
   }
 
   // ---------- progress tab ----------
