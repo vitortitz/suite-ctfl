@@ -41,4 +41,21 @@ describe("Cap4Exercises", () => {
       expect(ex.validate(ex.answerLabel)).toBe(true);
     }
   });
+
+  it("gera variantes avançadas (difíceis) e todas são autoconsistentes", () => {
+    const collect = (gen: (r: ReturnType<typeof seededRng>) => { prompt: string; answerLabel: string; validate: (s: string) => boolean }) => {
+      const prompts: string[] = [];
+      for (let s = 0; s < 60; s++) {
+        const ex = gen(seededRng(s * 7 + 3));
+        expect(ex.validate(ex.answerLabel)).toBe(true); // autoconsistente
+        prompts.push(ex.prompt);
+      }
+      return prompts.join(" ");
+    };
+    // cada técnica deve produzir, em algum momento, sua variante avançada
+    expect(collect(generateEquivalence)).toContain("mínimo"); // multicampo → máx(m,n)
+    expect(collect(generateBoundary)).toContain("estritamente"); // limites mistos
+    expect(collect(generateDecision)).toContain("don't-care"); // colapso de regras
+    expect(collect(generateStateTransition)).toContain("1-switch"); // pares de transições
+  });
 });
