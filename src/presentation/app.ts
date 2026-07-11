@@ -25,6 +25,7 @@ import type { CellState } from "./components/coverageGrid";
 import { renderReport, renderRunner, renderStart } from "./views/suiteView";
 import { renderStudy } from "./views/studyView";
 import { renderProgress } from "./views/progressView";
+import { renderGlossary } from "./views/glossaryView";
 import { renderExercises } from "./views/exercisesView";
 import { renderAuth } from "./views/authView";
 import { GoogleCloudTtsReader, type TtsState } from "./googleCloudTts";
@@ -42,7 +43,7 @@ export interface AppDeps {
   computeProgress: ComputeProgress;
 }
 
-type Tab = "suite" | "study" | "progress";
+type Tab = "suite" | "study" | "progress" | "glossary";
 type SuitePhase = "start" | "runner" | "report";
 
 export class App {
@@ -69,6 +70,10 @@ export class App {
   private selected = new Set<ChapterId>(CHAPTER_IDS);
   private size = 10;
   private studyChapter: ChapterId = 4;
+
+  // glossary
+  private glossaryChapter: ChapterId | 0 = 0;
+  private glossaryQuery = "";
 
   // study stopwatch (masthead)
   private swElapsed = 0;
@@ -125,6 +130,7 @@ export class App {
       <button class="tab on" data-tab="suite">Simulado</button>
       <button class="tab" data-tab="study">Estudo</button>
       <button class="tab" data-tab="progress">Progresso</button>
+      <button class="tab" data-tab="glossary">Glossário</button>
       <button class="ex-launch" id="open-exercises">Exercícios Cap. 4</button>
     </nav>
     <main class="view" id="view"></main>
@@ -152,6 +158,7 @@ export class App {
   private renderView(): void {
     if (this.tab === "suite") return this.renderSuite();
     if (this.tab === "study") return this.renderStudyTab();
+    if (this.tab === "glossary") return this.renderGlossaryTab();
     void this.renderProgressTab();
   }
 
@@ -210,9 +217,9 @@ export class App {
     this.renderRunnerPhase();
   }
 
-  private async startReinforcement(): Promise<void> {
+  private async startReinforcement(chapter?: ChapterId): Promise<void> {
     try {
-      const suite = await this.deps.reinforcement.execute(this.user.id);
+      const suite = await this.deps.reinforcement.execute(this.user.id, 15, chapter);
       if (suite.questions.length === 0) return;
       this.beginSuite(suite);
       this.renderRunnerPhase();
@@ -464,6 +471,46 @@ export class App {
     this.view.innerHTML = renderProgress({ dash, chaptersById: CHAPTERS });
     const btn = this.view.querySelector<HTMLButtonElement>("#reinforce");
     btn?.addEventListener("click", () => this.startReinforcement());
+    this.view.querySelectorAll<HTMLButtonElement>(".weak-card").forEach((card) => {
+      card.addEventListener("click", () => this.startReinforcement(Number(card.dataset.ch) as ChapterId));
+    });
+  }
+
+  // ---------- glossary tab ----------
+  private renderGlossaryTab(): void {
+    this.view.innerHTML = renderGlossary({
+      chapters: this.chapters,
+      activeChapter: this.glossaryChapter,
+      query: this.glossaryQuery,
+    });
+    const search = this.view.querySelector<HTMLInputElement>("#gloss-search")!;
+    search.addEventListener("input", () => {
+      this.glossaryQuery = search.value;
+      this.applyGlossaryFilter();
+    });
+    this.view.querySelectorAll<HTMLButtonElement>(".gloss-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        this.glossaryChapter = Number(chip.dataset.ch) as ChapterId | 0;
+        this.view.querySelectorAll<HTMLButtonElement>(".gloss-chip").forEach((c) => c.classList.toggle("on", c === chip));
+        this.applyGlossaryFilter();
+      });
+    });
+    this.applyGlossaryFilter();
+  }
+
+  private applyGlossaryFilter(): void {
+    const q = this.glossaryQuery.trim().toLowerCase();
+    const ch = this.glossaryChapter;
+    let visible = 0;
+    this.view.querySelectorAll<HTMLElement>(".gloss-item").forEach((el) => {
+      const matchCh = ch === 0 || Number(el.dataset.ch) === ch;
+      const matchQ = q === "" || (el.dataset.hay ?? "").includes(q);
+      const show = matchCh && matchQ;
+      el.hidden = !show;
+      if (show) visible++;
+    });
+    const empty = this.view.querySelector<HTMLElement>("#gloss-empty");
+    if (empty) empty.hidden = visible > 0;
   }
 
   // ---------- stopwatch ----------

@@ -48,7 +48,7 @@ describe("App (smoke DOM)", () => {
 
   it("monta a masthead, subnav e a tela inicial do simulado", () => {
     expect(root.querySelector(".brand")).toBeTruthy();
-    expect(root.querySelectorAll(".subnav .tab").length).toBe(3);
+    expect(root.querySelectorAll(".subnav .tab").length).toBe(4);
     expect(root.querySelector("#run-study")).toBeTruthy();
     expect(root.querySelector('[data-panel="exam"]')).toBeTruthy();
   });
@@ -63,7 +63,7 @@ describe("App (smoke DOM)", () => {
     (root.querySelector('.tab[data-tab="study"]') as HTMLButtonElement).click(); // Cap. 4 (ativo padrão)
     expect(root.querySelectorAll(".legend .kbadge").length).toBe(3);
     // cada seção do capítulo tem ao menos um selo K
-    const sections = root.querySelectorAll("details.acc");
+    const sections = root.querySelectorAll("details.acc:not(.deepen)");
     expect(sections.length).toBeGreaterThan(0);
     sections.forEach((sec) => expect(sec.querySelector(".krow .kbadge")).toBeTruthy());
     // Cap. 4 contém pelo menos uma seção K3 (aplicar)
@@ -77,6 +77,18 @@ describe("App (smoke DOM)", () => {
     await tick();
     expect(root.querySelectorAll(".stat").length).toBe(4);
     expect(root.querySelector(".weak-banner")).toBeTruthy();
+  });
+
+  it("troca para a aba Glossário e filtra por busca", () => {
+    (root.querySelector('.tab[data-tab="glossary"]') as HTMLButtonElement).click();
+    const all = root.querySelectorAll(".gloss-item").length;
+    expect(all).toBeGreaterThan(0);
+    const search = root.querySelector("#gloss-search") as HTMLInputElement;
+    search.value = "regressão";
+    search.dispatchEvent(new Event("input"));
+    const visible = [...root.querySelectorAll<HTMLElement>(".gloss-item")].filter((el) => !el.hidden).length;
+    expect(visible).toBeGreaterThan(0);
+    expect(visible).toBeLessThan(all);
   });
 
   it("inicia um estudo, dá feedback ao responder e habilita avançar", () => {

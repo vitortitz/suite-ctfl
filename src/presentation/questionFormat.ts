@@ -44,7 +44,7 @@ function extractAsk(text: string): { ctx: string; ask: string } {
   return { ctx: t.slice(0, start).trim().replace(/[:.]$/, "").trim(), ask: t.slice(start).trim() };
 }
 
-function itemList(items: Item[], variant: "num" | "alpha"): string {
+function itemList(items: Item[], variant: "num" | "alpha" | "roman"): string {
   const lis = items
     .map((it) => `<li><span class="q-mk q-mk--${variant}">${it.label}</span><span>${it.text}</span></li>`)
     .join("");
@@ -88,78 +88,155 @@ function tryMatching(src: string): string | null {
   </div>`;
 }
 
-/** Cenários com pontos numerados/alfabéticos: "(1) …", "1. …", "(a) …". */
-function tryEnumerated(src: string): string | null {
-  const numParen = [...src.matchAll(/\((\d+)\)\s*/g)];
-  const alphaParen = [...src.matchAll(/\(([a-eA-E])\)\s*/g)];
-  const numDot = [...src.matchAll(/(?:^|[\s;:])([1-9])\.\s+(?=[A-ZÀ-Ýa-zà-ý"'])/g)];
-
-  // Escolhe as famílias presentes (uma questão pode ter letras E números).
-  const numeric =
-    numParen.length >= 2 && numParen[0][1] === "1"
-      ? { matches: numParen, re: /\((\d+)\)\s*/g }
-      : numDot.length >= 2 && numDot[0][1] === "1"
-        ? { matches: numDot.map((m) => ({ ...m })), re: /(?:^|[\s;:])([1-9])\.\s+/g }
-        : null;
-  const alpha =
-    alphaParen.length >= 2 && alphaParen[0][1].toLowerCase() === "a"
-      ? { matches: alphaParen, re: /\(([a-eA-E])\)\s*/g }
-      : null;
-
-  if (!numeric && !alpha) return null;
-
-  // Índice do primeiro marcador global (início do bloco estruturado).
-  const firstIdx = Math.min(
-    numeric ? numeric.matches[0].index! : Infinity,
-    alpha ? alpha.matches[0].index! : Infinity,
-  );
-  const intro = src.slice(0, firstIdx).trim().replace(/[:.]$/, "").trim();
-
-  const blocks: string[] = [];
-  let tailStart = firstIdx;
-
-  if (alpha) {
-    const alphaStart = alpha.matches[0].index!;
-    const alphaEnd = numeric ? numeric.matches[0].index! : src.length;
-    const region = numeric && numeric.matches[0].index! > alphaStart ? src.slice(alphaStart, alphaEnd) : src.slice(alphaStart);
-    const parsed = splitByMarkers(region, /\(([a-eA-E])\)\s*/g);
-    if (parsed.length >= 2) {
-      blocks.push(itemList(cleanAsk(parsed), "alpha"));
-      tailStart = Math.max(tailStart, alphaStart);
-    }
-  }
-
-  if (numeric) {
-    const numStart = numeric.matches[0].index!;
-    const region = src.slice(numStart);
-    const parsed = splitByMarkers(region, numeric.re);
-    if (parsed.length >= 2) {
-      blocks.push(itemList(cleanAsk(parsed), "num"));
-      tailStart = Math.max(tailStart, numStart);
-    }
-  }
-
-  if (blocks.length === 0) return null;
-
-  const twoCol = alpha && numeric ? " q-match" : "";
-  // A pergunta pode vir antes da lista (enunciado) ou depois dela.
-  const introIsAsk = /\?\s*$/.test(intro);
-  const tailAsk = introIsAsk ? "" : extractAsk(src.slice(tailStart)).ask;
-
-  return `<div class="q-body">
-    ${introIsAsk ? stem(intro) : context(intro)}
-    <div class="q-enum${twoCol}">${blocks.map((b) => (twoCol ? `<div class="q-match-col">${b}</div>` : b)).join("")}</div>
-    ${tailAsk ? stem(tailAsk) : ""}
-  </div>`;
+type FamKind = "num" | "roman" | "alpha";
+interface Family {
+  kind: FamKind;
+  matches: RegExpMatchArray[];
+  re: RegExp;
 }
 
-/** Remove uma pergunta final que tenha grudado no texto do último item. */
-function cleanAsk(items: Item[]): Item[] {
-  if (items.length === 0) return items;
+/** Marcadores romanos minúsculos i–x entre parênteses: "(i)", "(ii)", "(iv)"… */
+const ROMAN_SRC = "\\((x|ix|iv|v?i{1,3}|v)\\)\\s*";
+
+/** Identifica as famílias de marcadores presentes no texto (números, romanos, letras). */
+function detectFamilies(src: string): Family[] {
+  const fams: Family[] = [];
+
+  const numParen = [...src.matchAll(/\((\d+)\)\s*/g)];
+  const numDot = [...src.matchAll(/(?:^|[\s;:])([1-9])\.\s+(?=[A-ZÀ-Ýa-zà-ý"'])/g)];
+  if (numParen.length >= 2 && numParen[0][1] === "1")
+    fams.push({ kind: "num", matches: numParen, re: /\((\d+)\)\s*/g });
+  else if (numDot.length >= 2 && numDot[0][1] === "1")
+    fams.push({ kind: "num", matches: numDot, re: /(?:^|[\s;:])([1-9])\.\s+/g });
+
+  const roman = [...src.matchAll(new RegExp(ROMAN_SRC, "gi"))];
+  if (roman.length >= 2 && roman[0][1].toLowerCase() === "i")
+    fams.push({ kind: "roman", matches: roman, re: new RegExp(ROMAN_SRC, "gi") });
+
+  const alphaParen = [...src.matchAll(/\(([a-eA-E])\)\s*/g)];
+  if (alphaParen.length >= 2 && alphaParen[0][1].toLowerCase() === "a")
+    fams.push({ kind: "alpha", matches: alphaParen, re: /\(([a-eA-E])\)\s*/g });
+
+  return fams;
+}
+
+/** Separa a pergunta final grudada no texto do último item, devolvendo itens + pergunta. */
+function splitTrailingAsk(items: Item[]): { items: Item[]; ask: string } {
+  if (items.length === 0) return { items, ask: "" };
   const last = items[items.length - 1];
   const { ctx, ask } = extractAsk(last.text);
   if (ask) items[items.length - 1] = { label: last.label, text: ctx };
-  return items;
+  return { items, ask };
+}
+
+/** Cenários/listas com marcadores "(1)…", "1.…", "(a)…", "(i)…". */
+function tryEnumerated(src: string): string | null {
+  const fams = detectFamilies(src);
+  if (fams.length === 0) return null;
+
+  // Ordem em que aparecem no texto — define os limites de cada bloco.
+  const bySource = [...fams].sort((a, b) => a.matches[0].index! - b.matches[0].index!);
+  const overallFirst = bySource[0].matches[0].index!;
+  const intro = src.slice(0, overallFirst).trim().replace(/[:.]$/, "").trim();
+
+  const parsed: Partial<Record<FamKind, Item[]>> = {};
+  let tailAsk = "";
+  bySource.forEach((fam, i) => {
+    const start = fam.matches[0].index!;
+    const end = i + 1 < bySource.length ? bySource[i + 1].matches[0].index! : src.length;
+    let items = splitByMarkers(src.slice(start, end), fam.re);
+    if (i === bySource.length - 1) {
+      const r = splitTrailingAsk(items);
+      items = r.items;
+      tailAsk = r.ask;
+    }
+    if (items.length >= 2) parsed[fam.kind] = items;
+  });
+
+  // Exibição: números sempre antes de romanos, e ambos antes de letras.
+  const order: FamKind[] = ["num", "roman", "alpha"];
+  const present = order.filter((k) => parsed[k]);
+  if (present.length === 0) return null;
+
+  const twoCol = !!parsed.num && !!parsed.alpha;
+  const introIsAsk = /\?\s*$/.test(intro);
+  const ask = introIsAsk ? "" : tailAsk;
+  const headers: Record<FamKind, string> = { num: "Itens", roman: "Itens", alpha: "Descrições" };
+
+  const blocks = present.map((k) => {
+    // Romanos são exibidos como números convencionais (i→1, ii→2…).
+    const items = k === "roman" ? parsed[k]!.map((it, i) => ({ label: String(i + 1), text: it.text })) : parsed[k]!;
+    const list = itemList(items, k === "alpha" ? "alpha" : "num");
+    return twoCol ? `<div class="q-match-col"><span class="q-col-h">${headers[k]}</span>${list}</div>` : list;
+  });
+
+  return `<div class="q-body">
+    ${introIsAsk ? stem(intro) : context(intro)}
+    <div class="q-enum${twoCol ? " q-match" : ""}">${blocks.join("")}</div>
+    ${ask ? stem(ask) : ""}
+  </div>`;
+}
+
+/**
+ * Tabela de decisão: tuplas "T1(Condição=SIM, …)" em que o primeiro registro
+ * rotula cada coluna. Renderiza uma tabela real (condições/ação nas linhas e as
+ * regras T1…Tn nas colunas) — muito mais legível que a lista de tuplas.
+ */
+function tryDecisionTable(src: string): string | null {
+  const re = /\b([A-Z]{1,3}\d+)\(([^)]{2,})\)/g;
+  const matches = [...src.matchAll(re)];
+  if (matches.length < 2) return null;
+
+  const firstFields = matches[0][2].split(/,\s+/).map((f) => f.trim());
+  // Só é tabela de decisão se o 1º registro nomeia cada coluna no formato "X=Y".
+  if (firstFields.length < 2 || !firstFields.every((f) => /=/.test(f))) return null;
+
+  const headers = firstFields.map((f) => f.split("=")[0].trim());
+  const cols = matches.map((m) => {
+    const fields = m[2].split(/,\s+/).map((f) => f.trim());
+    const values = headers.map((_, i) => {
+      const f = fields[i] ?? "";
+      return f.includes("=") ? f.slice(f.indexOf("=") + 1).trim() : f;
+    });
+    return { id: m[1], values };
+  });
+
+  const firstIdx = matches[0].index!;
+  const lastEnd = matches[matches.length - 1].index! + matches[matches.length - 1][0].length;
+  const intro = src.slice(0, firstIdx).trim().replace(/[:.]$/, "").trim();
+  const { ask } = extractAsk(src.slice(lastEnd));
+
+  // Valores/cabeçalhos são texto extraído do enunciado (podem conter <, >, &).
+  const escText = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const cell = (v: string): string => {
+    const t = v.toUpperCase();
+    const cls =
+      t === "SIM" || t === "S" || t === "V" || t === "T"
+        ? " v-yes"
+        : t === "NÃO" || t === "NAO" || t === "N" || t === "F"
+          ? " v-no"
+          : "";
+    return `<td class="q-dt-v${cls}">${escText(v)}</td>`;
+  };
+
+  const headCells = cols.map((c) => `<th scope="col">${escText(c.id)}</th>`).join("");
+  const bodyRows = headers
+    .map((h, r) => {
+      const isAction = r === headers.length - 1;
+      const cells = cols.map((c) => cell(c.values[r])).join("");
+      return `<tr${isAction ? ' class="q-dt-action"' : ""}><th scope="row">${escText(h)}</th>${cells}</tr>`;
+    })
+    .join("");
+
+  return `<div class="q-body">
+    ${context(intro)}
+    <div class="q-dt-wrap"><table class="q-dtable">
+      <thead><tr><th class="q-dt-corner"></th>${headCells}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table></div>
+    ${ask ? stem(ask) : ""}
+  </div>`;
 }
 
 /** Tuplas de caso de teste: "T1(…); T2(…)". */
@@ -197,5 +274,5 @@ function tryTuples(src: string): string | null {
  */
 export function formatPrompt(raw: string): string {
   const src = raw.trim();
-  return tryMatching(src) ?? tryEnumerated(src) ?? tryTuples(src) ?? stem(src);
+  return tryMatching(src) ?? tryEnumerated(src) ?? tryDecisionTable(src) ?? tryTuples(src) ?? stem(src);
 }

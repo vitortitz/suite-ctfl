@@ -1,4 +1,8 @@
 node_modules/
 dist/
+dist_*/
 *.log
 .DS_Store
+.claude/
+materiais-estudo/
+vite.config.ts.timestamp-*.mjs

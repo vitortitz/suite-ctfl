@@ -14,6 +14,12 @@ export interface SyllabusSection {
 export interface ChapterSyllabus {
   intro: string;
   sections: SyllabusSection[];
+  /**
+   * Conteúdo extra de aprofundamento (armadilhas de prova, exemplos, mnemônicos).
+   * NÃO é incluído na narração em áudio (chapterToSpeechText só lê intro + sections),
+   * então adicioná-lo aqui não dessincroniza o áudio estático já publicado.
+   */
+  deepen?: string;
 }
 
 /**
@@ -24,6 +30,10 @@ export interface ChapterSyllabus {
  */
 export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
   1: {
+    deepen: `<div class="callout"><span class="tt">pegadinhas de prova</span>"Provar que o software está livre de defeitos" nunca é um objetivo válido (1º princípio). QA ≠ teste: a QA é preventiva e focada no processo; o teste é controle de qualidade (QC), corretivo e focado no produto. Uma falha pode ocorrer sem defeito (condições ambientais), e nem todo defeito chega a virar falha.</div>
+      <p><b>Mnemônico dos 7 princípios:</b> <b>D</b>efeitos (mostra presença, não ausência) · <b>E</b>xaustivo é impossível · <b>A</b>ntecipado economiza · <b>P</b>esticida (paradoxo) · agru<b>P</b>amento (clustering) · <b>C</b>ontexto · <b>A</b>usência de erros é uma falácia.</p>
+      <p><b>Decore a cadeia causal:</b> uma pessoa comete um <b>erro</b> → que introduz um <b>defeito</b> → que, ao ser executado, pode provocar uma <b>falha</b>. Ordem fixa: erro → defeito → falha.</p>
+      <p><b>Papéis:</b> planejar/monitorar o processo é da <b>gerência de teste</b>; analisar, projetar, implementar e executar é do <b>testador</b>; decidir a liberação é do <b>negócio</b>.</p>`,
     intro:
       "O alicerce: vocabulário, princípios e o processo de teste. No exame só há questões K1 e K2 aqui.",
     sections: [
@@ -108,6 +118,10 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
     ],
   },
   2: {
+    deepen: `<div class="callout"><span class="tt">pegadinhas de prova</span>Confirmação ≠ regressão: a <b>confirmação (reteste)</b> reexecuta o caso que falhou para ver se o defeito foi corrigido; a <b>regressão</b> checa se a mudança não quebrou o que já funcionava. TDD, ATDD e BDD são abordagens "test-first". Shift-left significa testar <i>cedo</i> — nunca adiar.</div>
+      <p><b>Níveis (do menor ao maior):</b> componente → integração → sistema → aceite. Os <b>tipos</b> de teste (funcional, não funcional, caixa-branca, relacionado a mudança) cortam <i>todos</i> os níveis — não há restrição de nível.</p>
+      <p><b>Gatilhos de manutenção:</b> Modificação (correção/melhoria) · Migração/atualização de ambiente · Aposentadoria (arquivamento e recuperação de dados). Não confunda com "testar a manutenibilidade" — isso é uma característica de qualidade, não um gatilho.</p>
+      <p><b>test-first num relance:</b> TDD guia o <i>código</i>; ATDD deriva testes dos <i>critérios de aceite</i>; BDD descreve o <i>comportamento</i> em dado/quando/então.</p>`,
     intro:
       "Onde o teste se encaixa no SDLC: modelos, abordagens test-first, DevOps, shift-left, níveis e tipos de teste, e manutenção. Só K1 e K2.",
     sections: [
@@ -167,6 +181,10 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
     ],
   },
   3: {
+    deepen: `<div class="callout"><span class="tt">pegadinhas de prova</span>O teste estático encontra <b>defeitos</b>, nunca falhas (nada é executado). <b>Walkthrough</b> é conduzido pelo <b>autor</b>; a <b>inspeção</b>, pelo <b>moderador</b>. Na inspeção o autor nunca é líder da revisão nem relator.</div>
+      <p><b>Formalidade crescente:</b> informal → walkthrough → revisão técnica → inspeção. Só a partir da técnica há preparação individual e relatório; só a inspeção usa regras, listas de verificação e métricas.</p>
+      <p><b>Atividades da revisão (ordem):</b> planejamento → início → revisão individual → comunicação e análise das anomalias → correção e relato.</p>
+      <p><b>Papéis:</b> autor · gerente (decide recursos) · líder da revisão · facilitador/moderador (conduz) · revisor (acha anomalias) · escriba/redator (registra).</p>`,
     intro:
       "Revisões e análise estática — encontrar defeitos sem executar o software. Curto, com pontos fáceis em papéis, tipos de revisão e fatores de sucesso. Só K1 e K2.",
     sections: [
@@ -219,6 +237,10 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
     ],
   },
   4: {
+    deepen: `<div class="callout"><span class="tt">como não errar os cálculos</span>Partição de <b>a</b> a <b>b</b>: <b>3 partições</b> (1 válida + 2 inválidas). <b>BVA 2 valores</b>: limite + vizinho externo (a−1, a, b, b+1). <b>BVA 3 valores</b>: acrescenta o vizinho interno. Cobertura de instrução = instruções executadas ÷ total. <b>100% de ramo ⇒ 100% de instrução</b> (nunca o contrário).</div>
+      <p><b>Exemplos rápidos:</b> 30 de 40 instruções = <b>75%</b>. Tabela de decisão com <b>n</b> condições booleanas independentes = <b>2ⁿ</b> colunas. Idade 18–65 → 3 partições; BVA 2 valores → 17, 18, 65, 66.</p>
+      <p><b>Categorias de técnica:</b> caixa-preta (baseada na especificação) · caixa-branca (baseada na estrutura) · experiência (suposição de erro, exploratório, checklist).</p>
+      <p><b>Colaborativas:</b> 3 Cs (Cartão, Conversa, Confirmação) · INVEST · critérios de aceite · ATDD (testes antes do código).</p>`,
     intro:
       "O capítulo de maior peso e o único com K3 forte: você precisa APLICAR as técnicas de caixa-preta para derivar casos de teste, não só reconhecê-las.",
     sections: [
@@ -294,6 +316,10 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
     ],
   },
   5: {
+    deepen: `<div class="callout"><span class="tt">pegadinhas de prova</span>Nível de risco = <b>probabilidade × impacto</b>. Risco de <b>projeto</b> (prazos, recursos, fornecedor) ≠ risco de <b>produto</b> (defeitos/qualidade). <b>Severidade</b> (impacto técnico) ≠ <b>prioridade</b> (urgência de negócio). Critérios de entrada = DoR; de saída = DoD.</div>
+      <p><b>PERT (três pontos):</b> E = (otimista + 4 × mais provável + pessimista) / 6. Ex.: (2 + 4×11 + 14) / 6 = <b>10</b>.</p>
+      <p><b>Estimativa:</b> baseada em <b>métricas</b> (dados históricos) vs. baseada em <b>especialistas</b> (Wideband Delphi / Planning Poker).</p>
+      <p><b>Pirâmide:</b> base larga de testes de unidade, topo estreito de UI/E2E. <b>Quadrantes:</b> eixos negócio/tecnologia × apoiar a equipe/avaliar o produto.</p>`,
     intro:
       "Segundo maior peso e também com K3: planejamento, estimativa, priorização, riscos, monitoramento e gestão de defeitos.",
     sections: [
@@ -398,6 +424,9 @@ export const SYLLABUS: Record<ChapterId, ChapterSyllabus> = {
     ],
   },
   6: {
+    deepen: `<div class="callout"><span class="tt">pegadinhas de prova</span>O maior risco da automação é <b>subestimar a manutenção</b> dos scripts. Automação não elimina testadores, não garante ausência de defeitos e não substitui o teste exploratório. Boa prática de adoção: começar por um <b>projeto-piloto</b>.</div>
+      <p><b>Decidir automatizar:</b> compare o custo de criar + manter os scripts com o de repetir o teste manualmente ao longo do tempo. Regressão estável compensa; UI que muda muito, menos.</p>
+      <p><b>Categorias úteis:</b> gerenciamento de teste · análise estática · execução/automação · preparação de dados · desempenho e monitoramento.</p>`,
     intro:
       "O capítulo mais curto. Categorias de ferramentas e os benefícios e riscos da automação. Só K1 e K2.",
     sections: [

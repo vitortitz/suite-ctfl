@@ -1,7 +1,7 @@
 import type { Rng } from "../ports";
 
 /** Exercícios interativos de aplicação (nível K3) das técnicas do Capítulo 4. */
-export type ExerciseKind = "equivalence" | "boundary" | "decision";
+export type ExerciseKind = "equivalence" | "boundary" | "decision" | "stateTransition";
 
 export interface Exercise {
   kind: ExerciseKind;
@@ -83,18 +83,51 @@ export function generateDecision(rng: Rng = Math.random): Exercise {
   };
 }
 
+/**
+ * Transição de estados: numa tabela de estados, cada estado é cruzado com cada
+ * evento, então o total de transições (válidas + inválidas) é estados × eventos.
+ * Alterna entre pedir o total da tabela e o número de transições válidas.
+ */
+export function generateStateTransition(rng: Rng = Math.random): Exercise {
+  const states = randInt(rng, 3, 5);
+  const events = randInt(rng, 2, 4);
+  const total = states * events;
+  // Nº de transições válidas modeladas (as demais células da tabela são inválidas).
+  const valid = randInt(rng, states, total - 1);
+  const askTotal = rng() < 0.5;
+  if (askTotal) {
+    return {
+      kind: "stateTransition",
+      prompt: `Uma máquina de estados finitos tem <b>${states} estados</b> e <b>${events} eventos</b> possíveis.<br>Na tabela de estados completa, quantas transições existem (válidas + inválidas)?`,
+      explanation: `A tabela de estados cruza cada estado com cada evento: <b>${states} × ${events} = ${total}</b> transições no total (as células inválidas incluídas).`,
+      answerLabel: String(total),
+      validate: (input) => Number.parseInt(input.trim(), 10) === total,
+    };
+  }
+  const invalid = total - valid;
+  return {
+    kind: "stateTransition",
+    prompt: `Uma máquina de estados finitos tem <b>${states} estados</b> e <b>${events} eventos</b>. O diagrama modela <b>${valid} transições válidas</b>.<br>Quantas transições <b>inválidas</b> a tabela de estados completa contém?`,
+    explanation: `A tabela completa tem ${states} × ${events} = <b>${total}</b> células. Descontando as ${valid} transições válidas, sobram <b>${total} − ${valid} = ${invalid}</b> transições inválidas.`,
+    answerLabel: String(invalid),
+    validate: (input) => Number.parseInt(input.trim(), 10) === invalid,
+  };
+}
+
 const GENERATORS: Record<ExerciseKind, (rng: Rng) => Exercise> = {
   equivalence: generateEquivalence,
   boundary: generateBoundary,
   decision: generateDecision,
+  stateTransition: generateStateTransition,
 };
 
-export const EXERCISE_KINDS: ExerciseKind[] = ["equivalence", "boundary", "decision"];
+export const EXERCISE_KINDS: ExerciseKind[] = ["equivalence", "boundary", "decision", "stateTransition"];
 
 export const EXERCISE_LABELS: Record<ExerciseKind, string> = {
   equivalence: "Particionamento de equivalência",
   boundary: "Análise de valor limite",
   decision: "Tabela de decisão",
+  stateTransition: "Transição de estados",
 };
 
 export function generateExercise(kind: ExerciseKind, rng: Rng = Math.random): Exercise {

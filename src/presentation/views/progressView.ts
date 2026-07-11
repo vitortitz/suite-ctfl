@@ -13,7 +13,8 @@ export function renderProgress(p: ProgressProps): string {
   const stat = (value: string, label: string) =>
     `<div class="stat"><span class="stat-v">${value}</span><span class="stat-l">${label}</span></div>`;
 
-  const weakest = [...d.mastery].filter((m) => m.seen > 0).sort((a, b) => a.pct - b.pct)[0];
+  // Capítulos já praticados, do mais fraco ao mais forte — alimentam o carrossel.
+  const weakChapters = [...d.mastery].filter((m) => m.seen > 0).sort((a, b) => a.pct - b.pct);
 
   const masteryRows = d.mastery
     .map((m) => {
@@ -49,18 +50,32 @@ export function renderProgress(p: ProgressProps): string {
           })
           .join("");
 
-  const weakBanner = weakest
-    ? `<div class="weak-banner">
-        <div>
-          <span class="weak-label">Ponto mais fraco agora</span>
-          <span class="weak-cap" style="--c:${p.chaptersById[weakest.chapter].color}">Cap. ${weakest.chapter} · ${esc(p.chaptersById[weakest.chapter].name)} — ${weakest.pct}%</span>
-        </div>
-        <button class="btn primary" id="reinforce">Treinar pontos fracos</button>
-      </div>`
-    : `<div class="weak-banner">
-        <div><span class="weak-label">Reforço inteligente</span><span class="weak-cap">Responda algumas questões para liberar o treino direcionado.</span></div>
-        <button class="btn primary" id="reinforce" disabled>Treinar pontos fracos</button>
-      </div>`;
+  const weakCards = weakChapters
+    .map((m, i) => {
+      const c = p.chaptersById[m.chapter];
+      return `<button class="weak-card${i === 0 ? " lead" : ""}" data-ch="${m.chapter}" style="--c:${c.color}">
+        ${i === 0 ? `<span class="weak-card-flag">Mais fraco</span>` : ""}
+        <span class="weak-card-cap">Cap. ${m.chapter}</span>
+        <span class="weak-card-name">${esc(c.name)}</span>
+        <div class="bar"><i style="width:${m.pct}%;--c:${c.color}"></i></div>
+        <span class="weak-card-foot"><b>${m.pct}%</b> de domínio<span class="weak-card-cta">Treinar →</span></span>
+      </button>`;
+    })
+    .join("");
+
+  const weakSection =
+    weakChapters.length > 0
+      ? `<section class="weak-panel">
+          <div class="weak-panel-head">
+            <span class="weak-label">Treinar pontos fracos</span>
+            <span class="weak-sub">Escolha um capítulo — a rodada terá apenas questões dele.</span>
+          </div>
+          <div class="weak-carousel" role="list">${weakCards}</div>
+        </section>`
+      : `<div class="weak-banner">
+          <div><span class="weak-label">Reforço inteligente</span><span class="weak-cap">Responda algumas questões para liberar o treino direcionado.</span></div>
+          <button class="btn primary" id="reinforce" disabled>Treinar pontos fracos</button>
+        </div>`;
 
   return `
   <div class="progress">
@@ -71,7 +86,7 @@ export function renderProgress(p: ProgressProps): string {
       ${stat(d.examBestPct ? `${d.examBestPct}%` : "—", "melhor exame")}
     </div>
 
-    ${weakBanner}
+    ${weakSection}
 
     <div class="two-col">
       <div class="card">

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateBoundary, generateDecision, generateEquivalence, randomExercise } from "@/domain/services/cap4-exercises";
+import { generateBoundary, generateDecision, generateEquivalence, generateStateTransition, randomExercise } from "@/domain/services/cap4-exercises";
 import { seededRng } from "@/domain/random";
 
 describe("Cap4Exercises", () => {
@@ -24,6 +24,15 @@ describe("Cap4Exercises", () => {
     const ex = generateDecision(seededRng(3));
     expect(ex.validate(ex.answerLabel)).toBe(true);
     expect(ex.validate("3")).toBe(false);
+  });
+
+  it("valida o exercício de transição de estados (total/inválidas)", () => {
+    for (let s = 0; s < 20; s++) {
+      const ex = generateStateTransition(seededRng(s + 1));
+      expect(ex.kind).toBe("stateTransition");
+      expect(ex.validate(ex.answerLabel)).toBe(true);
+      expect(ex.validate("-1")).toBe(false);
+    }
   });
 
   it("randomExercise sempre retorna um exercício válido e autoconsistente", () => {

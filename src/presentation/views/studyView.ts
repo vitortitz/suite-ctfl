@@ -92,6 +92,17 @@ export function renderStudy(p: StudyProps): string {
       <p class="lead">${esc(chap.intro)}</p>
       ${legend()}
       ${sections}
+      ${
+        chap.deepen
+          ? `<details class="acc deepen">
+        <summary>
+          <span class="sec-head"><span class="sec-label">Aprofundamento</span></span>
+          <span class="deepen-tag">extra · não narrado</span>
+        </summary>
+        <div class="acc-body">${chap.deepen}</div>
+      </details>`
+          : ""
+      }
       <p class="muted small classify-note">Cada seção está classificada pelo nível de conhecimento do syllabus ISTQB CTFL v4.0.</p>
     </div>
   </div>`;
