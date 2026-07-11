@@ -164,7 +164,49 @@ body {
 .counter { font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
 .run-clock { margin-left: auto; font-family: var(--mono); font-weight: 600; font-size: 16px; color: var(--ink); }
 .run-clock.warn { color: var(--fail); }
-.q { font-family: var(--display); font-weight: 600; font-size: 20px; line-height: 1.35; margin: 4px 0 20px; letter-spacing: -0.01em; }
+/* ---------- question stem & structured prompt ---------- */
+.q { margin: 4px 0 20px; }
+.q-body { display: flex; flex-direction: column; gap: 14px; }
+.q-stem {
+  font-family: var(--display); font-weight: 600; font-size: 20px; line-height: 1.35;
+  letter-spacing: -0.01em; margin: 0; color: var(--ink);
+}
+.q-context {
+  font-family: var(--sans); font-size: 15px; line-height: 1.55; color: var(--ink-2); margin: 0;
+}
+/* listas de itens: cenários numerados e lados de uma combinação */
+.q-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.q-list li {
+  display: flex; align-items: flex-start; gap: 11px;
+  font-family: var(--sans); font-size: 15px; line-height: 1.45; color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px;
+}
+.q-mk {
+  font-family: var(--mono); font-weight: 600; font-size: 12px; margin-top: 1px;
+  flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 7px;
+  background: var(--surface); border: 1px solid var(--line); color: var(--ink-2);
+}
+.q-mk--num { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 22%, var(--line)); }
+.q-mk--alpha {
+  color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 6%, white);
+}
+/* combinação: itens × descrições lado a lado */
+.q-match { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.q-match-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.q-col-h {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--ink-2); padding-left: 2px;
+}
+/* tuplas de caso de teste: marcador + campos como dados */
+.q-tuples li { align-items: center; }
+.q-cells { display: flex; flex-wrap: wrap; gap: 6px; }
+.q-cell {
+  font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px;
+}
+@media (max-width: 620px) { .q-match { grid-template-columns: 1fr; } }
+
 .opts { display: flex; flex-direction: column; gap: 10px; }
 .opt {
   font-family: var(--sans); font-size: 15px; text-align: left; cursor: pointer;

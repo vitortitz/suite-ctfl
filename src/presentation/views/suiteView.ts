@@ -1,5 +1,6 @@
 import type { Chapter, ChapterId, GradeResult, SuiteMode } from "@/domain/types";
 import { esc } from "../dom";
+import { formatPrompt } from "../questionFormat";
 import { coverageGrid, type CellState } from "../components/coverageGrid";
 
 export interface StartProps {
@@ -99,7 +100,7 @@ export function renderRunner(p: RunnerProps): string {
       ${clock}
     </div>
     ${coverageGrid(p.states, p.mode === "exam")}
-    <h2 class="q">${p.prompt}</h2>
+    <div class="q">${formatPrompt(p.prompt)}</div>
     <div class="opts">${opts}</div>
     <div class="explain" id="explain" hidden></div>
     ${footer}
