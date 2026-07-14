@@ -46,9 +46,9 @@ describe("App (smoke DOM)", () => {
     await makeApp().mount(root);
   });
 
-  it("monta a masthead, subnav e a tela inicial do simulado", () => {
+  it("monta a sidebar, a navegação e a tela inicial do simulado", () => {
     expect(root.querySelector(".brand")).toBeTruthy();
-    expect(root.querySelectorAll(".subnav .tab").length).toBe(4);
+    expect(root.querySelectorAll(".side-nav .tab").length).toBe(4);
     expect(root.querySelector("#run-study")).toBeTruthy();
     expect(root.querySelector('[data-panel="exam"]')).toBeTruthy();
   });

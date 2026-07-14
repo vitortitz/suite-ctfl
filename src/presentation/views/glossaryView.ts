@@ -1,5 +1,6 @@
 import type { Chapter, ChapterId } from "@/domain/types";
 import { GLOSSARY } from "@/infrastructure/data/glossary";
+import { GLOSSARY_QUESTIONS } from "@/infrastructure/data/glossaryQuestions";
 import { esc } from "../dom";
 
 export interface GlossaryProps {
@@ -9,7 +10,7 @@ export interface GlossaryProps {
   query: string;
 }
 
-/** Glossário CTFL: busca por termo + filtro por capítulo. */
+/** Glossário CTFL: busca por termo, filtro por capítulo e quiz de terminologia. */
 export function renderGlossary(p: GlossaryProps): string {
   const chips = [
     `<button class="gloss-chip ${p.activeChapter === 0 ? "on" : ""}" data-ch="0">Todos</button>`,
@@ -36,9 +37,17 @@ export function renderGlossary(p: GlossaryProps): string {
 
   return `
   <div class="glossary">
+    <div class="gloss-quiz">
+      <div class="gloss-quiz-txt">
+        <span class="gloss-quiz-kicker">Quiz de terminologia</span>
+        <h3>Você domina os termos?</h3>
+        <p>Questões difíceis no padrão da prova: distinções sutis, combinação de colunas e cenários para classificar. <span id="gloss-quiz-scope">${GLOSSARY_QUESTIONS.length} questões no total</span>.</p>
+      </div>
+      <button class="btn quiz-btn" id="gloss-quiz-btn">Testar termos →</button>
+    </div>
     <div class="card gloss-head">
       <h2 class="sub">Glossário CTFL v4.0</h2>
-      <p class="muted small">${GLOSSARY.length} termos essenciais. Busque por termo ou filtre por capítulo.</p>
+      <p class="muted small">${GLOSSARY.length} termos essenciais. Busque por termo ou filtre por capítulo — o filtro também vale para o quiz.</p>
       <div class="gloss-search">
         <input type="search" id="gloss-search" placeholder="Buscar termo (ex.: regressão, risco, cobertura)…"
           autocomplete="off" value="${esc(p.query)}" aria-label="Buscar no glossário" />

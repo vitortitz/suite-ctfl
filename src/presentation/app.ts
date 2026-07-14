@@ -2,6 +2,9 @@ import type { Chapter, ChapterId, GradeResult, Suite, User } from "@/domain/type
 import { CHAPTERS, CHAPTER_IDS } from "@/domain/chapters";
 import { isPass } from "@/domain/policies/exam";
 import { gradeItems } from "@/domain/policies/scoring";
+import { buildSuite } from "@/domain/services/suite";
+import { shuffle } from "@/domain/random";
+import { GLOSSARY_QUESTIONS } from "@/infrastructure/data/glossaryQuestions";
 import {
   EXERCISE_KINDS,
   generateExercise,
@@ -114,31 +117,45 @@ export class App {
 
   // ---------- shell ----------
   private renderShell(): void {
+    const icon = {
+      suite: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>`,
+      study: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+      progress: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+      glossary: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    };
     this.root.innerHTML = `
-    <header class="mast">
-      <div class="brand">Suíte CTFL<span>self test runner</span></div>
-      <div class="mast-tools">
-        <div class="timer" title="Cronômetro de estudo">
-          <button class="t-btn" id="timer-toggle" aria-label="Iniciar ou pausar">▶</button>
-          <span class="t-clock" id="study-timer">00:00:00</span>
-          <button class="t-btn" id="timer-reset" aria-label="Zerar">↺</button>
+    <div class="layout">
+      <aside class="side">
+        <div class="brand">
+          <span class="brand-logo">✓</span>
+          <span class="brand-txt">Suíte CTFL<span>ISTQB v4.0</span></span>
         </div>
-        <button class="account" id="account-btn">Entrar</button>
+        <nav class="side-nav">
+          <button class="tab on" data-tab="suite"><span class="tab-ic">${icon.suite}</span><span class="tab-lbl">Simulado</span></button>
+          <button class="tab" data-tab="study"><span class="tab-ic">${icon.study}</span><span class="tab-lbl">Estudo</span></button>
+          <button class="tab" data-tab="progress"><span class="tab-ic">${icon.progress}</span><span class="tab-lbl">Progresso</span></button>
+          <button class="tab" data-tab="glossary"><span class="tab-ic">${icon.glossary}</span><span class="tab-lbl">Glossário</span></button>
+        </nav>
+        <button class="ex-launch" id="open-exercises"><span class="ex-badge">Cap. 4</span>Exercícios práticos</button>
+        <div class="side-foot">
+          <div class="timer" title="Cronômetro de estudo">
+            <button class="t-btn" id="timer-toggle" aria-label="Iniciar ou pausar">▶</button>
+            <span class="t-clock" id="study-timer">00:00:00</span>
+            <button class="t-btn" id="timer-reset" aria-label="Zerar">↺</button>
+          </div>
+          <button class="account" id="account-btn">Entrar</button>
+        </div>
+      </aside>
+      <div class="main">
+        <header class="hero" id="hero"></header>
+        <main class="view" id="view"></main>
+        <footer class="foot">Conteúdo alinhado ao ISTQB CTFL v4.0 · ferramenta de estudo não oficial</footer>
       </div>
-    </header>
-    <nav class="subnav">
-      <button class="tab on" data-tab="suite">Simulado</button>
-      <button class="tab" data-tab="study">Estudo</button>
-      <button class="tab" data-tab="progress">Progresso</button>
-      <button class="tab" data-tab="glossary">Glossário</button>
-      <button class="ex-launch" id="open-exercises">Exercícios Cap. 4</button>
-    </nav>
-    <main class="view" id="view"></main>
-    <footer class="foot">Conteúdo alinhado ao ISTQB CTFL v4.0 · ferramenta de estudo não oficial</footer>`;
+    </div>`;
   }
 
   private wireShell(): void {
-    this.root.querySelectorAll<HTMLButtonElement>(".subnav .tab").forEach((btn) => {
+    this.root.querySelectorAll<HTMLButtonElement>(".side-nav .tab").forEach((btn) => {
       btn.addEventListener("click", () => this.setTab(btn.dataset.tab as Tab));
     });
     this.root.querySelector<HTMLButtonElement>("#open-exercises")!.addEventListener("click", () => this.openExercises());
@@ -151,11 +168,31 @@ export class App {
     if (tab !== "study") this.tts.stop();
     this.tab = tab;
     if (tab === "suite") this.phase = "start";
-    this.root.querySelectorAll<HTMLButtonElement>(".subnav .tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+    this.root.querySelectorAll<HTMLButtonElement>(".side-nav .tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
     this.renderView();
   }
 
+  /** Cabeçalho hero da área principal, contextual à aba (escondido durante uma suíte em execução). */
+  private updateHero(): void {
+    const hero = this.root.querySelector<HTMLElement>("#hero");
+    if (!hero) return;
+    if (this.tab === "suite" && this.phase !== "start") {
+      hero.hidden = true;
+      return;
+    }
+    const copy: Record<Tab, { kicker: string; title: string; sub: string }> = {
+      suite: { kicker: "Simulado", title: "Rode a suíte em você", sub: "Estudo dirigido com correção imediata ou simulação fiel da prova oficial." },
+      study: { kicker: "Estudo", title: "Resumo do syllabus", sub: "Os 6 capítulos do CTFL v4.0 condensados, com leitura em voz alta." },
+      progress: { kicker: "Progresso", title: "Seu painel de qualidade", sub: "Histórico, pontos fracos por capítulo e reforço direcionado." },
+      glossary: { kicker: "Glossário", title: "A linguagem da prova", sub: "Termos oficiais do ISTQB — e um quiz difícil para testá-los." },
+    };
+    const c = copy[this.tab];
+    hero.hidden = false;
+    hero.innerHTML = `<span class="hero-kicker">${c.kicker}</span><h1>${c.title}</h1><p>${c.sub}</p>`;
+  }
+
   private renderView(): void {
+    this.updateHero();
     if (this.tab === "suite") return this.renderSuite();
     if (this.tab === "study") return this.renderStudyTab();
     if (this.tab === "glossary") return this.renderGlossaryTab();
@@ -241,6 +278,7 @@ export class App {
   }
 
   private renderRunnerPhase(): void {
+    this.updateHero();
     const s = this.suite!;
     const sq = s.questions[this.idx];
     const isExam = s.mode === "exam";
@@ -362,6 +400,7 @@ export class App {
   }
 
   private renderReportPhase(): void {
+    this.updateHero();
     if (!this.lastGrade) return this.renderSuite();
     const { grade, durationSec, isExam } = this.lastGrade;
     this.view.innerHTML = renderReport({
@@ -483,6 +522,7 @@ export class App {
       activeChapter: this.glossaryChapter,
       query: this.glossaryQuery,
     });
+    this.view.querySelector<HTMLButtonElement>("#gloss-quiz-btn")!.addEventListener("click", () => this.startGlossaryQuiz());
     const search = this.view.querySelector<HTMLInputElement>("#gloss-search")!;
     search.addEventListener("input", () => {
       this.glossaryQuery = search.value;
@@ -511,6 +551,28 @@ export class App {
     });
     const empty = this.view.querySelector<HTMLElement>("#gloss-empty");
     if (empty) empty.hidden = visible > 0;
+    const scope = this.view.querySelector<HTMLElement>("#gloss-quiz-scope");
+    if (scope) {
+      const n = this.glossaryQuizPool().length;
+      scope.textContent = ch === 0 ? `${n} questões no total` : `${n} questões do Cap. ${ch}`;
+    }
+  }
+
+  /** Questões de terminologia elegíveis segundo o filtro de capítulo ativo no glossário. */
+  private glossaryQuizPool() {
+    return this.glossaryChapter === 0
+      ? GLOSSARY_QUESTIONS
+      : GLOSSARY_QUESTIONS.filter((q) => q.chapter === this.glossaryChapter);
+  }
+
+  /** Inicia o quiz de terminologia reutilizando o runner do modo estudo. */
+  private startGlossaryQuiz(): void {
+    const pool = this.glossaryQuizPool();
+    if (pool.length === 0) return;
+    const questions = shuffle(pool).slice(0, 10);
+    const chapterIds = [...new Set(questions.map((q) => q.chapter))];
+    this.beginSuite(buildSuite(questions, "study", chapterIds));
+    this.renderRunnerPhase();
   }
 
   // ---------- stopwatch ----------

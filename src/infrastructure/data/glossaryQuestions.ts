@@ -1,0 +1,376 @@
+import type { Question } from "@/domain/types";
+
+/**
+ * Banco de questões do Glossário — terminologia ISTQB CTFL v4.0.
+ * Questões difíceis no padrão do exame oficial: distinções sutis entre termos
+ * parecidos, combinação de colunas (matching) e classificação de cenários.
+ * Usadas apenas no quiz "Testar termos" da aba Glossário.
+ */
+export const GLOSSARY_QUESTIONS: Question[] = [
+  // ---------------- Capítulo 1 ----------------
+  {
+    id: "gq-01",
+    chapter: 1,
+    prompt: `Analise os eventos a seguir em um projeto: 1. O analista escreveu na especificação que o desconto máximo é 15%, quando a regra de negócio aprovada era 10%; 2. O código calcula o desconto usando o valor 15%; 3. Um cliente recebe 15% de desconto em uma compra em produção. Qual alternativa classifica CORRETAMENTE cada evento segundo o glossário ISTQB?`,
+    options: [
+      `1 = erro; 2 = defeito; 3 = falha`,
+      `1 = defeito; 2 = falha; 3 = erro`,
+      `1 = erro; 2 = falha; 3 = defeito`,
+      `1 = defeito; 2 = defeito; 3 = falha`,
+    ],
+    answerIndex: 3,
+    explanation: `Pegadinha clássica: o engano humano (erro) foi cometido ANTES, ao interpretar a regra. A especificação escrita com 15% já é um <b>defeito</b> em um produto de trabalho (a especificação); o código com 15% é outro <b>defeito</b>, propagado do primeiro; o desconto indevido observado em produção é a <b>falha</b>. Erro é o engano mental da pessoa, não o texto errado no documento.`,
+  },
+  {
+    id: "gq-02",
+    chapter: 1,
+    prompt: `Combine cada termo (1-4) com a pergunta que ele responde (A-D): 1. Verificação; 2. Validação; 3. Garantia da qualidade (QA); 4. Controle da qualidade (QC). A. "O produto atende às necessidades reais dos usuários?"; B. "Os processos estão sendo seguidos para produzir qualidade?"; C. "O produto foi construído conforme a especificação?"; D. "O produto de trabalho atinge o nível de qualidade exigido?"`,
+    options: [`1C, 2A, 3B, 4D`, `1A, 2C, 3D, 4B`, `1C, 2A, 3D, 4B`, `1B, 2A, 3C, 4D`],
+    answerIndex: 0,
+    explanation: `<b>Verificação</b> confere conformidade com a especificação (C); <b>validação</b> confere se atende às necessidades reais (A); <b>QA</b> é orientada ao processo (B); <b>QC</b> é orientado ao produto — o teste é uma forma de QC que avalia se o produto atinge a qualidade exigida (D).`,
+  },
+  {
+    id: "gq-03",
+    chapter: 1,
+    prompt: `Sobre a relação entre base de teste, condição de teste e caso de teste, qual afirmação é CORRETA?`,
+    options: [
+      `Condições de teste são derivadas da base de teste, e casos de teste são derivados das condições de teste`,
+      `A base de teste é derivada das condições de teste, que documentam os casos de teste executados`,
+      `Casos de teste são derivados diretamente da base de teste, e as condições de teste são o registro da sua execução`,
+      `Condições de teste e casos de teste são sinônimos; ambos derivam da base de teste`,
+    ],
+    answerIndex: 0,
+    explanation: `A cadeia de derivação é: <b>base de teste</b> (requisitos, histórias, design) → <b>condições de teste</b> (aspectos testáveis identificados na análise) → <b>casos de teste</b> (pré-condições, entradas, resultados esperados, criados na modelagem). A rastreabilidade liga essas camadas.`,
+  },
+  {
+    id: "gq-04",
+    chapter: 1,
+    prompt: `Durante a depuração, um desenvolvedor: (i) reproduz a falha; (ii) diagnostica a causa; (iii) corrige o defeito. Qual atividade de TESTE tipicamente ocorre logo APÓS a depuração para dar suporte a ela?`,
+    options: [
+      `Teste de confirmação, para verificar se a correção resolveu o defeito`,
+      `Análise de causa-raiz, para impedir que a falha volte a ocorrer`,
+      `Teste de regressão completo de todo o sistema, obrigatório em qualquer correção`,
+      `Nova rodada de teste exploratório sobre todo o produto`,
+    ],
+    answerIndex: 0,
+    explanation: `Após a depuração (atividade de desenvolvimento), o <b>teste de confirmação (reteste)</b> reexecuta o teste que falhou para verificar se o defeito foi de fato corrigido. Regressão também é recomendada, mas na medida do impacto — não "completa e obrigatória". Análise de causa-raiz é outra atividade, não um teste.`,
+  },
+  {
+    id: "gq-05",
+    chapter: 1,
+    prompt: `Qual das opções descreve um item de TESTWARE produzido na atividade de ANÁLISE de teste, segundo o processo de teste do CTFL v4.0?`,
+    options: [
+      `Condições de teste priorizadas`,
+      `Casos de teste priorizados`,
+      `Procedimentos de teste e scripts prontos para execução`,
+      `Relatório de progresso do teste`,
+    ],
+    answerIndex: 0,
+    explanation: `Cada atividade produz seu testware: a <b>análise</b> produz condições de teste priorizadas; a <b>modelagem (projeto)</b> produz casos de teste; a <b>implementação</b> produz procedimentos, scripts e dados; o <b>monitoramento/conclusão</b> produz relatórios. Confundir o artefato com a atividade é erro comum na prova.`,
+  },
+  {
+    id: "gq-06",
+    chapter: 1,
+    prompt: `Uma organização quer aumentar a independência de teste. Qual opção ordena os cenários do MENOR para o MAIOR grau de independência?`,
+    options: [
+      `Autor testa o próprio código → colega da mesma equipe testa → equipe de teste independente da organização → testadores externos à organização`,
+      `Colega da mesma equipe testa → autor testa o próprio código → testadores externos → equipe de teste da organização`,
+      `Testadores externos → equipe de teste independente → colega da mesma equipe → autor testa o próprio código`,
+      `Autor testa o próprio código → testadores externos → colega da mesma equipe → equipe de teste independente`,
+    ],
+    answerIndex: 0,
+    explanation: `Os graus de <b>independência de teste</b> crescem com a distância entre autor e testador: o próprio autor (nenhuma) → pares da mesma equipe → equipe de teste independente dentro da organização → testadores externos à organização (máxima). Mais independência revela outros tipos de defeito, mas pode isolar o teste.`,
+  },
+  {
+    id: "gq-07",
+    chapter: 1,
+    prompt: `Sobre "ceticismo profissional" e a "abordagem de equipe inteira" (whole-team), qual afirmação é CORRETA?`,
+    options: [
+      `O ceticismo profissional é a postura de não presumir que o software está correto; a abordagem de equipe inteira torna todos corresponsáveis pela qualidade — os dois conceitos coexistem sem conflito`,
+      `A abordagem de equipe inteira elimina o ceticismo profissional, pois desenvolvedores não devem questionar o próprio código`,
+      `O ceticismo profissional exige uma equipe de teste totalmente independente, o que é incompatível com a equipe inteira`,
+      `A abordagem de equipe inteira transfere a responsabilidade pela qualidade exclusivamente para os testadores mais experientes`,
+    ],
+    answerIndex: 0,
+    explanation: `<b>Ceticismo profissional</b> (questionar, não presumir correção) é uma postura individual; a <b>abordagem de equipe inteira</b> distribui a responsabilidade pela qualidade entre todos. São complementares: todos testam, e todos testam com espírito crítico. Nenhum dos dois exige nem elimina o outro.`,
+  },
+
+  // ---------------- Capítulo 2 ----------------
+  {
+    id: "gq-08",
+    chapter: 2,
+    prompt: `Combine a prática (1-3) com sua característica distintiva (A-C): 1. TDD; 2. ATDD; 3. BDD. A. Deriva testes de critérios de aceite em colaboração com stakeholders, antes de codificar; B. Descreve o comportamento em frases Dado/Quando/Então compreensíveis por todos; C. Escreve um teste que falha, o código mínimo para passar e então refatora.`,
+    options: [`1C, 2A, 3B`, `1A, 2C, 3B`, `1C, 2B, 3A`, `1B, 2A, 3C`],
+    answerIndex: 0,
+    explanation: `<b>TDD</b> = ciclo red-green-refactor no nível do código (C). <b>ATDD</b> = testes de aceite derivados colaborativamente dos critérios de aceite (A). <b>BDD</b> = comportamento descrito em linguagem Gherkin Dado/Quando/Então (B). As três são abordagens "test-first", mas em níveis e formatos diferentes.`,
+  },
+  {
+    id: "gq-09",
+    chapter: 2,
+    prompt: `Um banco corrigiu um defeito no cálculo de juros e, além de reexecutar o teste que falhou, reexecutou testes das funcionalidades de extrato e transferência, que compartilham o mesmo módulo. Semanas depois, o sistema foi migrado para um novo servidor e um conjunto de testes foi executado. Como se classificam, respectivamente, as três atividades de teste descritas?`,
+    options: [
+      `Confirmação; regressão; teste de manutenção`,
+      `Regressão; confirmação; teste de manutenção`,
+      `Confirmação; manutenção; teste de regressão`,
+      `Regressão; manutenção; teste de confirmação`,
+    ],
+    answerIndex: 0,
+    explanation: `Reexecutar o teste que falhou após a correção = <b>confirmação (reteste)</b>. Reexecutar testes de áreas relacionadas para achar efeitos colaterais = <b>regressão</b>. Testar após migração de ambiente = <b>teste de manutenção</b> (que, por sua vez, inclui confirmação e regressão como partes).`,
+  },
+  {
+    id: "gq-10",
+    chapter: 2,
+    prompt: `Sobre a diferença entre NÍVEL de teste e TIPO de teste, qual afirmação é CORRETA?`,
+    options: [
+      `Níveis são grupos de atividades organizados por estágio do desenvolvimento; tipos são agrupados por objetivo de qualidade e podem ser aplicados em qualquer nível`,
+      `Níveis definem o objetivo do teste (funcional ou não funcional); tipos definem o estágio (componente, sistema)`,
+      `Cada tipo de teste só pode ser executado em um único nível correspondente`,
+      `Tipos de teste são subconjuntos dos níveis: o teste funcional é um subnível do teste de sistema`,
+    ],
+    answerIndex: 0,
+    explanation: `<b>Níveis</b> (componente, integração, sistema, aceite) organizam o teste por estágio do SDLC; <b>tipos</b> (funcional, não funcional, caixa-branca, relacionado a mudanças) organizam por objetivo. Qualquer tipo pode ser realizado em qualquer nível — essa combinação livre é o ponto central cobrado na prova.`,
+  },
+  {
+    id: "gq-11",
+    chapter: 2,
+    prompt: `Uma empresa entrega o software a um grupo de clientes reais para uso em seus próprios ambientes antes do lançamento oficial. Simultaneamente, a equipe de operações valida procedimentos de backup e recuperação de desastre. Como se classificam, respectivamente, esses dois testes?`,
+    options: [
+      `Teste beta; teste de aceite operacional`,
+      `Teste alfa; teste de aceite contratual`,
+      `Teste beta; teste de aceite do usuário (UAT)`,
+      `Teste alfa; teste de aceite operacional`,
+    ],
+    answerIndex: 0,
+    explanation: `Uso por clientes reais <b>no ambiente deles</b>, antes do lançamento = <b>teste beta</b> (alfa seria no ambiente do desenvolvedor). Validar backup, restore e recuperação de desastre é <b>aceite operacional</b> — feito por administradores/operações, não pelos usuários finais.`,
+  },
+  {
+    id: "gq-12",
+    chapter: 2,
+    prompt: `"Shift-left" e "teste antecipado" (early testing) se relacionam de que forma?`,
+    options: [
+      `Shift-left é a aplicação prática do princípio do teste antecipado: mover atividades de teste e revisão para mais cedo no SDLC`,
+      `Shift-left significa automatizar todos os testes; teste antecipado significa testar sem automação`,
+      `Teste antecipado se aplica só a requisitos; shift-left se aplica só a código`,
+      `São conceitos opostos: shift-left adia o teste para depois da entrega`,
+    ],
+    answerIndex: 0,
+    explanation: `<b>Shift-left</b> é o nome da abordagem que concretiza o princípio "teste antecipado economiza tempo e dinheiro": revisar especificações desde o rascunho, escrever testes antes do código, usar análise estática e CI cedo. Não é sobre automatizar tudo nem se restringe a um artefato.`,
+  },
+
+  // ---------------- Capítulo 3 ----------------
+  {
+    id: "gq-13",
+    chapter: 3,
+    prompt: `Sobre teste estático e teste dinâmico, qual afirmação é CORRETA quanto ao que cada um encontra?`,
+    options: [
+      `O teste estático encontra defeitos diretamente nos produtos de trabalho; o teste dinâmico revela falhas causadas por defeitos durante a execução`,
+      `O teste estático revela falhas em documentos; o teste dinâmico encontra defeitos no código sem executá-lo`,
+      `Ambos encontram falhas, mas apenas o dinâmico pode ser aplicado a requisitos`,
+      `O teste estático só encontra defeitos que o dinâmico também encontraria, porém mais tarde`,
+    ],
+    answerIndex: 0,
+    explanation: `Distinção-chave: o <b>teste estático</b> examina o artefato e encontra <b>defeitos</b> diretamente (sem executar nada — logo, não há falha); o <b>teste dinâmico</b> executa o software e observa <b>falhas</b>, das quais se infere o defeito. Além disso, o estático acha defeitos que o dinâmico dificilmente acharia (ambiguidade, código morto).`,
+  },
+  {
+    id: "gq-14",
+    chapter: 3,
+    prompt: `Combine o tipo de revisão (1-4) com sua característica marcante (A-D): 1. Revisão informal; 2. Walkthrough; 3. Revisão técnica; 4. Inspeção. A. Conduzida pelo autor, útil para aprendizado e consenso; B. Sem processo definido nem resultado documentado obrigatório; C. A mais formal: moderador treinado, papéis definidos, regras e métricas; D. Revisores tecnicamente qualificados, com preparação individual, focada em decisões técnicas.`,
+    options: [`1B, 2A, 3D, 4C`, `1B, 2D, 3A, 4C`, `1A, 2B, 3C, 4D`, `1C, 2A, 3D, 4B`],
+    answerIndex: 0,
+    explanation: `<b>Informal</b> = sem processo definido (B); <b>walkthrough</b> = liderado pelo autor (A); <b>revisão técnica</b> = pares qualificados com preparação individual e foco técnico (D); <b>inspeção</b> = a mais formal, com moderador, papéis, regras e métricas (C). A formalidade cresce nessa ordem.`,
+  },
+  {
+    id: "gq-15",
+    chapter: 3,
+    prompt: `Durante uma revisão formal, uma pessoa registra as anomalias mencionadas, outra mantém a reunião focada e garante um ambiente seguro, e uma terceira responde a perguntas sobre o documento que produziu. Quais papéis correspondem, respectivamente, a essas três pessoas?`,
+    options: [
+      `Escriba; moderador; autor`,
+      `Moderador; escriba; autor`,
+      `Escriba; autor; moderador`,
+      `Autor; moderador; escriba`,
+    ],
+    answerIndex: 0,
+    explanation: `Registrar anomalias e decisões = <b>escriba (redator)</b>; conduzir a reunião com foco e segurança psicológica = <b>moderador (facilitador)</b>; esclarecer dúvidas sobre o produto de trabalho = <b>autor</b>. Notar que o autor participa e esclarece, mas não conduz a inspeção.`,
+  },
+  {
+    id: "gq-16",
+    chapter: 3,
+    prompt: `Qual das opções distingue CORRETAMENTE "revisão" de "análise estática"?`,
+    options: [
+      `Revisão é feita por pessoas; análise estática é feita por ferramenta — ambas sem executar o código`,
+      `Revisão exige executar o código passo a passo; análise estática examina apenas documentos`,
+      `Análise estática é feita por pessoas experientes; revisão é sempre automatizada`,
+      `Revisão encontra falhas em produção; análise estática encontra defeitos em requisitos`,
+    ],
+    answerIndex: 0,
+    explanation: `As duas formas de <b>teste estático</b> se distinguem pelo agente: a <b>revisão</b> é avaliação humana (do informal à inspeção); a <b>análise estática</b> é avaliação por ferramenta (linters, verificadores de padrão). Nenhuma das duas executa o código.`,
+  },
+
+  // ---------------- Capítulo 4 ----------------
+  {
+    id: "gq-17",
+    chapter: 4,
+    prompt: `Um campo aceita valores inteiros de 1 a 100. Sobre particionamento de equivalência (EP) e análise de valor limite (BVA), qual afirmação é CORRETA?`,
+    options: [
+      `EP exige testar um representante qualquer de cada partição; BVA de 2 valores exigiria testar 0, 1, 100 e 101`,
+      `EP exige testar todos os valores de cada partição; BVA testa apenas o valor central 50`,
+      `BVA de 2 valores testa 1 e 100 apenas; valores fora do intervalo não pertencem a nenhuma partição`,
+      `EP e BVA são a mesma técnica: ambas testam somente as bordas das partições`,
+    ],
+    answerIndex: 0,
+    explanation: `No <b>EP</b>, qualquer elemento da partição a representa (ex.: 50 para a partição válida 1–100; partições inválidas <1 e >100 também contam). A <b>BVA de 2 valores</b> testa cada borda e seu vizinho fora da partição: 0, 1, 100, 101. BVA é um refinamento de EP aplicável a partições ordenadas — não são a mesma coisa.`,
+  },
+  {
+    id: "gq-18",
+    chapter: 4,
+    prompt: `Sobre cobertura de instrução (statement) e cobertura de ramo (branch), qual afirmação é CORRETA?`,
+    options: [
+      `100% de cobertura de ramo garante 100% de cobertura de instrução, mas o inverso não é verdadeiro`,
+      `100% de cobertura de instrução garante 100% de cobertura de ramo, mas o inverso não é verdadeiro`,
+      `As duas coberturas são independentes: nenhuma implica a outra`,
+      `Ambas garantem que todos os defeitos do código serão encontrados`,
+    ],
+    answerIndex: 0,
+    explanation: `A cobertura de <b>ramo subsume</b> a de instrução: exercitar todos os ramos (cada decisão como V e F) obriga a passar por todas as instruções. O inverso falha — um "if" sem "else" pode ter 100% de instruções com o ramo falso jamais exercitado. E nenhuma cobertura garante ausência de defeitos.`,
+  },
+  {
+    id: "gq-19",
+    chapter: 4,
+    prompt: `Combine a técnica baseada em experiência (1-3) com sua descrição (A-C): 1. Suposição de erros; 2. Teste exploratório; 3. Teste baseado em checklist. A. Projeto, execução e aprendizado ocorrem simultaneamente, muitas vezes organizados em sessões com cartas de teste; B. Antecipa defeitos prováveis a partir de enganos típicos e falhas passadas, atacando-os diretamente; C. Deriva os testes de uma lista de itens construída com a experiência, cobrindo o que importa para o usuário.`,
+    options: [`1B, 2A, 3C`, `1A, 2B, 3C`, `1C, 2A, 3B`, `1B, 2C, 3A`],
+    answerIndex: 0,
+    explanation: `<b>Suposição de erros</b> = prever onde o desenvolvedor provavelmente errou (B); <b>teste exploratório</b> = aprender/projetar/executar ao mesmo tempo, guiado por cartas de teste (A); <b>checklist</b> = testes derivados de uma lista de verificação construída pela experiência (C).`,
+  },
+  {
+    id: "gq-20",
+    chapter: 4,
+    prompt: `Sobre "carta de teste" (test charter) e "condição de teste", qual afirmação é CORRETA?`,
+    options: [
+      `A carta de teste define objetivo e escopo de uma sessão exploratória; a condição de teste é um aspecto testável derivado da base de teste em qualquer abordagem`,
+      `A carta de teste é um caso de teste detalhado com passos e resultados esperados; a condição de teste é seu resumo executivo`,
+      `Os dois termos descrevem o mesmo artefato em abordagens diferentes`,
+      `A condição de teste só existe em teste exploratório; a carta de teste, só em teste roteirizado`,
+    ],
+    answerIndex: 0,
+    explanation: `A <b>carta de teste</b> pertence ao teste exploratório baseado em sessões: declara objetivo, escopo e tempo da sessão — sem passos detalhados. A <b>condição de teste</b> é um conceito geral do processo de teste: qualquer aspecto testável identificado na análise, em qualquer abordagem.`,
+  },
+  {
+    id: "gq-21",
+    chapter: 4,
+    prompt: `Um sistema de autenticação bloqueia a conta após 3 tentativas falhas consecutivas e volta a permitir login após desbloqueio pelo administrador. Qual técnica de teste caixa-preta modela MELHOR esse comportamento, e por quê?`,
+    options: [
+      `Teste de transição de estados, porque a resposta do sistema depende do histórico de eventos, não apenas da entrada atual`,
+      `Particionamento de equivalência, porque as senhas se dividem em válidas e inválidas`,
+      `Análise de valor limite, porque o número 3 é um limite numérico de um intervalo ordenado`,
+      `Tabela de decisão, porque há combinação de múltiplas condições independentes simultâneas`,
+    ],
+    answerIndex: 0,
+    explanation: `O comportamento depende do <b>estado</b> (quantas falhas consecutivas já ocorreram, conta bloqueada ou não) e de <b>eventos</b> que causam transições — assinatura do <b>teste de transição de estados</b>. EP/BVA tratam entradas isoladas e tabela de decisão trata combinações de condições sem noção de histórico/sequência.`,
+  },
+
+  // ---------------- Capítulo 5 ----------------
+  {
+    id: "gq-22",
+    chapter: 5,
+    prompt: `Classifique os eventos: 1. O fornecedor do ambiente de testes atrasará a entrega em 3 semanas; 2. O módulo de pagamento pode calcular impostos errados, gerando multas ao cliente; 3. O testador sênior pediu demissão no meio do projeto. Quais são riscos de PROJETO e quais são riscos de PRODUTO?`,
+    options: [
+      `Projeto: 1 e 3; Produto: 2`,
+      `Projeto: 2; Produto: 1 e 3`,
+      `Projeto: 1; Produto: 2 e 3`,
+      `Todos são riscos de produto, pois afetam a entrega final`,
+    ],
+    answerIndex: 0,
+    explanation: `<b>Riscos de projeto</b> ameaçam a capacidade de o projeto cumprir seus objetivos: atraso de fornecedor (1) e perda de pessoas-chave (3). <b>Risco de produto</b> é a possibilidade de o produto falhar em qualidade: cálculo errado de impostos prejudicando o usuário/negócio (2). A prova adora misturar os dois.`,
+  },
+  {
+    id: "gq-23",
+    chapter: 5,
+    prompt: `Um defeito faz o sistema travar completamente, mas apenas quando o usuário acessa uma tela administrativa usada uma vez por ano por um único funcionário. Como se classificam severidade e prioridade, e qual conceito explica a diferença?`,
+    options: [
+      `Severidade alta (impacto técnico grave) e prioridade possivelmente baixa (pouca urgência de negócio) — severidade mede impacto no sistema; prioridade mede urgência para o negócio`,
+      `Severidade baixa e prioridade alta, pois travamentos são sempre urgentes para o negócio`,
+      `Severidade e prioridade altas, pois são sinônimos e todo travamento é crítico`,
+      `Severidade baixa e prioridade baixa, pois a tela é raramente usada`,
+    ],
+    answerIndex: 0,
+    explanation: `<b>Severidade</b> = impacto técnico do defeito (travamento total → alta). <b>Prioridade</b> = urgência de correção sob a ótica do negócio (tela anual, um usuário → pode ser baixa). Os dois eixos são independentes e podem divergir — exatamente o cenário que a prova cobra.`,
+  },
+  {
+    id: "gq-24",
+    chapter: 5,
+    prompt: `Sobre critérios de entrada e de saída no contexto ágil, qual correspondência é CORRETA?`,
+    options: [
+      `Critérios de entrada ≈ Definition of Ready (DoR); critérios de saída ≈ Definition of Done (DoD)`,
+      `Critérios de entrada ≈ Definition of Done (DoD); critérios de saída ≈ Definition of Ready (DoR)`,
+      `Ambos correspondem à Definition of Done, aplicada em momentos diferentes`,
+      `DoR e DoD substituem o plano de teste, tornando os critérios desnecessários`,
+    ],
+    answerIndex: 0,
+    explanation: `<b>Critérios de entrada</b> (condições para iniciar uma atividade) equivalem no ágil à <b>Definition of Ready</b>; <b>critérios de saída</b> (condições para considerar concluída) equivalem à <b>Definition of Done</b>. A inversão dessa correspondência é o distrator típico do exame.`,
+  },
+  {
+    id: "gq-25",
+    chapter: 5,
+    prompt: `Usando a estimativa de três pontos (PERT), uma tarefa tem estimativa otimista de 2 dias, mais provável de 5 dias e pessimista de 14 dias. Qual é o esforço esperado?`,
+    options: [`6 dias`, `7 dias`, `5 dias`, `10,5 dias`],
+    answerIndex: 0,
+    explanation: `Fórmula: E = (otimista + 4 × mais provável + pessimista) / 6 = (2 + 4×5 + 14) / 6 = 36 / 6 = <b>6 dias</b>. Questão K3 típica: a prova espera o cálculo exato, e a média simples (2+5+14)/3 = 7 é o distrator.`,
+  },
+  {
+    id: "gq-26",
+    chapter: 5,
+    prompt: `Combine o conceito (1-3) com a descrição (A-C): 1. Pirâmide de testes; 2. Quadrantes de teste; 3. Teste baseado em risco. A. Classifica os testes por ponto de vista (negócio/tecnologia) e propósito (apoiar a equipe/criticar o produto); B. Usa a probabilidade e o impacto de eventos negativos para selecionar, priorizar e dosar o esforço de teste; C. Sugere granularidade: muitos testes rápidos e isolados na base, poucos testes lentos de ponta a ponta no topo.`,
+    options: [`1C, 2A, 3B`, `1A, 2C, 3B`, `1B, 2A, 3C`, `1C, 2B, 3A`],
+    answerIndex: 0,
+    explanation: `<b>Pirâmide</b> = camadas por granularidade e velocidade (C); <b>quadrantes</b> = matriz negócio/tecnologia × apoiar/criticar, que ajuda a comunicar tipos de teste (A); <b>teste baseado em risco</b> = análise de risco (probabilidade × impacto) dirigindo seleção e priorização (B).`,
+  },
+  {
+    id: "gq-27",
+    chapter: 5,
+    prompt: `Sobre "baseline" no gerenciamento de configuração, qual afirmação é CORRETA?`,
+    options: [
+      `É uma versão aprovada de um item de configuração, alterável apenas por processo formal de mudança, que permite reproduzir resultados de teste de forma confiável`,
+      `É a primeira versão de qualquer documento, que nunca mais pode ser alterada em hipótese alguma`,
+      `É o conjunto de defeitos conhecidos e aceitos que não serão corrigidos na release`,
+      `É a linha de corte de aprovação do exame, definida no plano de teste`,
+    ],
+    answerIndex: 0,
+    explanation: `<b>Baseline</b> é um item de configuração aprovado e congelado, que só muda por processo formal de controle de mudanças. É o que garante saber exatamente qual versão do item de teste, do testware e do ambiente produziu cada resultado — pré-requisito de reprodutibilidade e rastreabilidade.`,
+  },
+
+  // ---------------- Capítulo 6 ----------------
+  {
+    id: "gq-28",
+    chapter: 6,
+    prompt: `Combine a categoria de ferramenta (1-3) com o exemplo de uso (A-C): 1. Ferramenta de gerenciamento de teste; 2. Ferramenta de automação de execução; 3. Ferramenta de preparação de dados. A. Gerar massa anonimizada de clientes para alimentar os testes de integração; B. Rastrear casos de teste, execuções e defeitos com relatórios ligados aos requisitos; C. Executar scripts que comparam resultados reais com esperados a cada build.`,
+    options: [`1B, 2C, 3A`, `1C, 2B, 3A`, `1A, 2C, 3B`, `1B, 2A, 3C`],
+    answerIndex: 0,
+    explanation: `<b>Gerenciamento de teste</b> = organizar casos, execuções, defeitos e rastreabilidade (B); <b>automação de execução</b> = rodar scripts e comparar resultados reais × esperados (C); <b>preparação de dados</b> = gerar e gerenciar massa de teste (A).`,
+  },
+  {
+    id: "gq-29",
+    chapter: 6,
+    prompt: `Sobre integração contínua (CI) e automação de testes, qual afirmação reflete CORRETAMENTE o entendimento do CTFL v4.0?`,
+    options: [
+      `A CI executa build e testes automatizados a cada mudança integrada, dando feedback rápido — mas não elimina a necessidade de testes que exigem julgamento humano`,
+      `Com CI, todos os testes do projeto passam a ser automatizados, dispensando testadores`,
+      `A CI se limita a compilar o código; testes automatizados nunca fazem parte do pipeline`,
+      `A automação de testes garante retorno do investimento imediato em qualquer projeto, independentemente do contexto`,
+    ],
+    answerIndex: 0,
+    explanation: `A <b>CI</b> integra e testa mudanças automaticamente a cada commit, encurtando o ciclo de feedback. Porém, testes que exigem julgamento humano (exploratório, usabilidade) continuam necessários, e o retorno da automação depende de contexto, manutenção dos scripts e frequência de execução — nunca é garantido.`,
+  },
+  {
+    id: "gq-30",
+    chapter: 6,
+    prompt: `Qual das opções descreve um RISCO típico do uso de ferramentas de automação de teste, e não um benefício?`,
+    options: [
+      `Subestimar o esforço de manutenção dos scripts e depositar expectativas irreais na ferramenta`,
+      `Redução do trabalho manual repetitivo da equipe de teste`,
+      `Maior consistência e repetibilidade nas execuções de regressão`,
+      `Avaliação objetiva e relatórios padronizados das execuções`,
+    ],
+    answerIndex: 0,
+    explanation: `Riscos clássicos de automação: expectativas irreais, subestimar tempo/custo de introduzir e <b>manter</b> os scripts, e depender demais da ferramenta. Redução de trabalho repetitivo, consistência e relatórios objetivos são os benefícios — a prova costuma pedir para separar as duas listas.`,
+  },
+];
