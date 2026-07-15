@@ -35,7 +35,12 @@ export function renderStart(p: StartProps): string {
     </section>
 
     <section data-panel="exam" hidden>
-      <p class="lead">Simula a prova oficial: <b>40 questões</b> na distribuição 8/6/4/11/9/2, <b>60 minutos</b> e sem feedback até o fim. Aprovação a partir de <b>65%</b>.</p>
+      <p class="lead">Simula a prova oficial, na distribuição 8/6/4/11/9/2 e sem feedback até o fim.</p>
+      <div class="exam-facts">
+        <div class="fact"><span class="fact-v">40</span><span class="fact-l">questões</span></div>
+        <div class="fact"><span class="fact-v">60<i>min</i></span><span class="fact-l">de prova</span></div>
+        <div class="fact"><span class="fact-v">65<i>%</i></span><span class="fact-l">para aprovação</span></div>
+      </div>
       <ul class="brief">
         <li>Navegue entre questões e revise antes de finalizar.</li>
         <li>O tempo corre no topo; ao zerar, a prova é entregue automaticamente.</li>
@@ -80,20 +85,33 @@ export function renderRunner(p: RunnerProps): string {
       ? `<span class="run-clock ${p.remainingSec <= 300 ? "warn" : ""}" id="exam-clock"></span>`
       : "";
 
+  const hint =
+    p.mode === "exam"
+      ? `<span class="kbd-hint"><kbd>A</kbd>–<kbd>D</kbd> responde · <kbd>←</kbd><kbd>→</kbd> navega</span>`
+      : `<span class="kbd-hint"><kbd>A</kbd>–<kbd>D</kbd> responde · <kbd>Enter</kbd> avança</span>`;
+
   const footer =
     p.mode === "exam"
       ? `<div class="run-nav">
+          ${hint}
           <button class="btn ghost" id="prev" ${p.index === 0 ? "disabled" : ""}>Anterior</button>
           <button class="btn ghost" id="next">${p.index === p.total - 1 ? "Revisar" : "Próxima"}</button>
           <button class="btn primary" id="finish">Finalizar exame</button>
         </div>`
       : `<div class="run-nav">
+          ${hint}
           <button class="btn primary" id="next" ${p.revealed ? "" : "disabled"}>
             ${p.index === p.total - 1 ? "Ver resultado" : "Próxima questão"}</button>
         </div>`;
 
+  const timeTrack =
+    p.mode === "exam"
+      ? `<div class="time-track" id="time-track" aria-hidden="true"><i id="time-bar"></i></div>`
+      : "";
+
   return `
   <div class="card runner">
+    ${timeTrack}
     <div class="run-top">
       <span class="tag" style="--c:${p.chapter.color}">Cap. ${p.chapter.id} · ${esc(p.chapter.name)}</span>
       <span class="counter">${p.index + 1}/${p.total}</span>
@@ -142,7 +160,7 @@ export function renderReport(p: ReportProps): string {
   <div class="card report">
     ${verdict}
     <div class="score-hero">
-      <div class="ring" style="--pct:${p.grade.pct}"><span>${p.grade.pct}<i>%</i></span></div>
+      <div class="ring${p.isExam ? (p.passed ? " pass" : " fail") : ""}" style="--pct:${p.grade.pct}"><span>${p.grade.pct}<i>%</i></span></div>
       <div class="score-meta">
         <p><b>${p.grade.correct}</b> de <b>${p.grade.total}</b> corretas</p>
         <p class="muted">Tempo: ${Math.floor(p.durationSec / 60)} min ${p.durationSec % 60}s</p>

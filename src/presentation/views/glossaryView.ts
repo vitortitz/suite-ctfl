@@ -55,6 +55,10 @@ export function renderGlossary(p: GlossaryProps): string {
       <div class="gloss-chips">${chips}</div>
     </div>
     <div class="gloss-list" id="gloss-list">${items}</div>
-    <p class="muted small gloss-empty" id="gloss-empty" hidden>Nenhum termo encontrado.</p>
+    <div class="gloss-empty" id="gloss-empty" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8.5" y1="8.5" x2="13.5" y2="13.5"/><line x1="13.5" y1="8.5" x2="8.5" y2="13.5"/></svg>
+      <p>Nenhum termo encontrado para os filtros atuais.</p>
+      <button class="btn ghost" id="gloss-clear">Limpar filtros</button>
+    </div>
   </div>`;
 }

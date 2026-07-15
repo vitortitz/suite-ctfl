@@ -46,6 +46,7 @@ export function renderStudy(p: StudyProps): string {
     <span class="stat-chip muted"><span class="stat-num">${active.officialMinutes}</span> min no curso oficial do syllabus</span>
   </div>`;
   const ttsBar = `<div class="tts-bar">
+    <span class="tts-eq" id="tts-eq" hidden aria-hidden="true"><i></i><i></i><i></i></span>
     <button class="btn ghost tts-toggle" id="tts-toggle" type="button">▶ Ouvir Resumo</button>
     <button class="btn ghost tts-stop" id="tts-stop" type="button" title="Parar leitura" hidden>■ Parar</button>
     <label class="tts-vol">

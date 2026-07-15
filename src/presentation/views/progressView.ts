@@ -7,6 +7,21 @@ export interface ProgressProps {
   chaptersById: Record<number, Chapter>;
 }
 
+/** Esqueleto exibido enquanto o painel carrega: espelha o layout final para evitar salto. */
+export function renderProgressSkeleton(): string {
+  const stat = `<div class="stat"><span class="skel-line w40"></span><span class="skel-line w70 thin"></span></div>`;
+  const rows = Array.from({ length: 6 }, () => `<div class="skel-line row"></div>`).join("");
+  return `
+  <div class="progress skeleton" aria-busy="true" aria-label="Carregando seu progresso">
+    <div class="stats-row">${stat}${stat}${stat}${stat}</div>
+    <div class="card skel-banner"><span class="skel-line w30"></span><span class="skel-line w60 thin"></span></div>
+    <div class="two-col">
+      <div class="card">${rows}</div>
+      <div class="card">${rows}</div>
+    </div>
+  </div>`;
+}
+
 export function renderProgress(p: ProgressProps): string {
   const d = p.dash;
 
@@ -32,7 +47,7 @@ export function renderProgress(p: ProgressProps): string {
   const activity = d.last14
     .map((x) => {
       const hgt = Math.round((x.seconds / maxSec) * 100);
-      return `<span class="spark ${x.active ? "on" : ""}" style="--h:${Math.max(x.active ? 12 : 4, hgt)}%" title="${x.day}: ${fmtDuration(x.seconds)}"></span>`;
+      return `<span class="spark ${x.active ? "on" : ""}" style="--h:${Math.max(x.active ? 12 : 4, hgt)}%" data-tip="${x.day} · ${fmtDuration(x.seconds)}" aria-label="${x.day}: ${fmtDuration(x.seconds)} de estudo"></span>`;
     })
     .join("");
 

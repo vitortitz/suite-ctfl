@@ -23,11 +23,12 @@ import type { TrackStudyTime } from "@/application/trackStudyTime";
 import type { ComputeProgress } from "@/application/computeProgress";
 
 import { esc, fmtClock } from "./dom";
+import * as fx from "./motionFx";
 import { Modal } from "./components/modal";
 import type { CellState } from "./components/coverageGrid";
 import { renderReport, renderRunner, renderStart } from "./views/suiteView";
 import { renderStudy } from "./views/studyView";
-import { renderProgress } from "./views/progressView";
+import { renderProgress, renderProgressSkeleton } from "./views/progressView";
 import { renderGlossary } from "./views/glossaryView";
 import { renderExercises } from "./views/exercisesView";
 import { renderAuth } from "./views/authView";
@@ -49,6 +50,11 @@ export interface AppDeps {
 type Tab = "suite" | "study" | "progress" | "glossary";
 type SuitePhase = "start" | "runner" | "report";
 
+/** Ícones do cronômetro (SVG em vez de glifos de fonte, que variam por plataforma). */
+const IC_PLAY = `<svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" aria-hidden="true"><polygon points="6 3 21 12 6 21 6 3"/></svg>`;
+const IC_PAUSE = `<svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg>`;
+const IC_RESET = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg>`;
+
 export class App {
   private root!: HTMLElement;
   private view!: HTMLElement;
@@ -64,6 +70,8 @@ export class App {
   private revealed = false;
   private suiteStartMs = 0;
   private lastGrade: { grade: GradeResult; durationSec: number; isExam: boolean } | null = null;
+  /** Qual animação a próxima renderização do runner deve tocar. */
+  private runnerFx: "enter" | "feedback" | "none" = "enter";
 
   // exam timer
   private examDeadlineMs = 0;
@@ -105,6 +113,8 @@ export class App {
     this.renderShell();
     this.view = this.root.querySelector<HTMLElement>("#view")!;
     this.wireShell();
+    fx.wirePressFeedback();
+    document.addEventListener("keydown", (e) => this.onRunnerKey(e));
     try {
       const u = await this.deps.auth.currentUser();
       if (u) this.user = u;
@@ -139,14 +149,15 @@ export class App {
         <button class="ex-launch" id="open-exercises"><span class="ex-badge">Cap. 4</span>Exercícios práticos</button>
         <div class="side-foot">
           <div class="timer" title="Cronômetro de estudo">
-            <button class="t-btn" id="timer-toggle" aria-label="Iniciar ou pausar">▶</button>
+            <button class="t-btn" id="timer-toggle" aria-label="Iniciar ou pausar">${IC_PLAY}</button>
             <span class="t-clock" id="study-timer">00:00:00</span>
-            <button class="t-btn" id="timer-reset" aria-label="Zerar">↺</button>
+            <button class="t-btn" id="timer-reset" aria-label="Zerar">${IC_RESET}</button>
           </div>
           <button class="account" id="account-btn">Entrar</button>
         </div>
       </aside>
       <div class="main">
+        <div class="veil-clip" aria-hidden="true"><div class="veil" id="veil"></div></div>
         <header class="hero" id="hero"></header>
         <main class="view" id="view"></main>
         <footer class="foot">Conteúdo alinhado ao ISTQB CTFL v4.0 · ferramenta de estudo não oficial</footer>
@@ -166,10 +177,13 @@ export class App {
 
   private setTab(tab: Tab): void {
     if (tab !== "study") this.tts.stop();
+    const changed = tab !== this.tab;
     this.tab = tab;
     if (tab === "suite") this.phase = "start";
     this.root.querySelectorAll<HTMLButtonElement>(".side-nav .tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
-    this.renderView();
+    const veil = this.root.querySelector<HTMLElement>("#veil");
+    if (changed && veil) fx.pageSweep(veil, () => this.renderView());
+    else this.renderView();
   }
 
   /** Cabeçalho hero da área principal, contextual à aba (escondido durante uma suíte em execução). */
@@ -189,6 +203,7 @@ export class App {
     const c = copy[this.tab];
     hero.hidden = false;
     hero.innerHTML = `<span class="hero-kicker">${c.kicker}</span><h1>${c.title}</h1><p>${c.sub}</p>`;
+    fx.enterHero(hero);
   }
 
   private renderView(): void {
@@ -228,6 +243,7 @@ export class App {
     });
     this.view.querySelector<HTMLButtonElement>("#run-study")!.addEventListener("click", () => this.startStudy());
     this.view.querySelector<HTMLButtonElement>("#run-exam")!.addEventListener("click", () => this.startExam());
+    fx.enterView(this.view);
   }
 
   private beginSuite(suite: Suite): void {
@@ -320,18 +336,27 @@ export class App {
       });
       this.updateExamClock();
     }
+
+    if (this.runnerFx === "feedback") {
+      fx.revealFeedback(this.view, this.answers[this.idx] === sq.correctPosition);
+    } else if (this.runnerFx === "enter") {
+      fx.enterQuestion(this.view);
+    }
+    this.runnerFx = "enter";
   }
 
   private chooseOption(i: number): void {
     const s = this.suite!;
     if (s.mode === "exam") {
       this.answers[this.idx] = i;
+      this.runnerFx = "none";
       this.renderRunnerPhase();
       return;
     }
     if (this.revealed) return;
     this.answers[this.idx] = i;
     this.revealed = true;
+    this.runnerFx = "feedback";
     this.renderRunnerPhase();
   }
 
@@ -356,6 +381,36 @@ export class App {
     if (this.idx > 0) {
       this.idx--;
       this.renderRunnerPhase();
+    }
+  }
+
+  /** Atalhos do runner: A–E/1–5 respondem, Enter/→ avançam, ← volta (exame). */
+  private onRunnerKey(e: KeyboardEvent): void {
+    if (this.tab !== "suite" || this.phase !== "runner" || !this.suite) return;
+    if (document.querySelector(".modal-backdrop")) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const s = this.suite;
+    const isExam = s.mode === "exam";
+    const total = s.questions[this.idx].order.length;
+    let oi = -1;
+    if (/^[1-9]$/.test(e.key)) oi = Number(e.key) - 1;
+    else if (/^[a-eA-E]$/.test(e.key)) oi = e.key.toUpperCase().charCodeAt(0) - 65;
+    if (oi >= 0 && oi < total) {
+      if (!isExam && this.revealed) return;
+      e.preventDefault();
+      this.chooseOption(oi);
+      return;
+    }
+    if (e.key === "Enter" || e.key === "ArrowRight") {
+      // Enter com um botão focado já dispara o clique nativo — evita disparo duplo.
+      if (e.key === "Enter" && t?.tagName === "BUTTON") return;
+      e.preventDefault();
+      this.onNext();
+    } else if (e.key === "ArrowLeft" && isExam) {
+      e.preventDefault();
+      this.onPrev();
     }
   }
 
@@ -385,6 +440,24 @@ export class App {
     const r = this.examRemaining();
     el.textContent = fmtClock(r);
     el.classList.toggle("warn", r <= 300);
+    const track = this.view.querySelector<HTMLElement>("#time-track");
+    const bar = this.view.querySelector<HTMLElement>("#time-bar");
+    if (track && bar) {
+      const total = this.suite?.durationSec ?? 3600;
+      const pct = Math.max(0, Math.min(1, r / total));
+      // Primeiro paint após re-render: aplica a largura sem transição para a
+      // barra não varrer de 100% até o valor atual a cada troca de questão.
+      if (bar.style.width === "") {
+        bar.style.transition = "none";
+        bar.style.width = `${pct * 100}%`;
+        void bar.offsetWidth;
+        bar.style.transition = "";
+      } else {
+        bar.style.width = `${pct * 100}%`;
+      }
+      track.classList.toggle("mid", pct <= 0.5 && pct > 0.15);
+      track.classList.toggle("low", pct <= 0.15);
+    }
   }
 
   // ---------- finalize + report ----------
@@ -417,6 +490,10 @@ export class App {
       this.renderSuite();
     });
     this.view.querySelector<HTMLButtonElement>("#to-progress")!.addEventListener("click", () => this.setTab("progress"));
+    fx.enterView(this.view);
+    fx.stampVerdict(this.view);
+    const ring = this.view.querySelector<HTMLElement>(".ring");
+    if (ring) fx.animateRing(ring, grade.pct);
   }
 
   // ---------- study tab ----------
@@ -435,6 +512,9 @@ export class App {
       });
     });
     this.wireTts();
+    fx.wireAccordions(this.view);
+    fx.wireScrollReveal(this.view);
+    fx.enterView(this.view);
   }
 
   private wireTts(): void {
@@ -462,7 +542,9 @@ export class App {
     updateVolumeLabel();
     rateSelect.value = String(this.tts.rate);
 
+    const eq = this.view.querySelector<HTMLElement>("#tts-eq");
     const updateUi = (state: TtsState): void => {
+      if (eq) eq.hidden = state !== "playing";
       stopBtn.hidden = state === "idle";
       toggleBtn.disabled = state === "loading";
       toggleBtn.textContent =
@@ -505,7 +587,7 @@ export class App {
 
   // ---------- progress tab ----------
   private async renderProgressTab(): Promise<void> {
-    this.view.innerHTML = `<div class="card loading">Carregando seu progresso…</div>`;
+    this.view.innerHTML = renderProgressSkeleton();
     const dash = await this.deps.computeProgress.execute(this.user.id);
     this.view.innerHTML = renderProgress({ dash, chaptersById: CHAPTERS });
     const btn = this.view.querySelector<HTMLButtonElement>("#reinforce");
@@ -513,6 +595,9 @@ export class App {
     this.view.querySelectorAll<HTMLButtonElement>(".weak-card").forEach((card) => {
       card.addEventListener("click", () => this.startReinforcement(Number(card.dataset.ch) as ChapterId));
     });
+    const carousel = this.view.querySelector<HTMLElement>(".weak-carousel");
+    if (carousel) fx.wireCarousel(carousel);
+    fx.enterView(this.view);
   }
 
   // ---------- glossary tab ----------
@@ -535,20 +620,37 @@ export class App {
         this.applyGlossaryFilter();
       });
     });
-    this.applyGlossaryFilter();
+    this.view.querySelector<HTMLButtonElement>("#gloss-clear")?.addEventListener("click", () => {
+      this.glossaryQuery = "";
+      this.glossaryChapter = 0;
+      search.value = "";
+      this.view.querySelectorAll<HTMLButtonElement>(".gloss-chip").forEach((c) => c.classList.toggle("on", Number(c.dataset.ch) === 0));
+      this.applyGlossaryFilter();
+      search.focus();
+    });
+    this.applyGlossaryFilter(false);
+    fx.enterView(this.view);
   }
 
-  private applyGlossaryFilter(): void {
+  /** Aplica capítulo + busca aos termos; anima a lista quando o conjunto visível muda. */
+  private applyGlossaryFilter(animateChange = true): void {
     const q = this.glossaryQuery.trim().toLowerCase();
     const ch = this.glossaryChapter;
     let visible = 0;
+    let changed = false;
+    const shown: HTMLElement[] = [];
     this.view.querySelectorAll<HTMLElement>(".gloss-item").forEach((el) => {
       const matchCh = ch === 0 || Number(el.dataset.ch) === ch;
       const matchQ = q === "" || (el.dataset.hay ?? "").includes(q);
       const show = matchCh && matchQ;
+      if (el.hidden === show) changed = true;
       el.hidden = !show;
-      if (show) visible++;
+      if (show) {
+        visible++;
+        shown.push(el);
+      }
     });
+    if (animateChange && changed) fx.animateFilterList(shown);
     const empty = this.view.querySelector<HTMLElement>("#gloss-empty");
     if (empty) empty.hidden = visible > 0;
     const scope = this.view.querySelector<HTMLElement>("#gloss-quiz-scope");
@@ -579,7 +681,7 @@ export class App {
   private toggleStopwatch(): void {
     this.swRunning = !this.swRunning;
     const toggle = this.root.querySelector<HTMLButtonElement>("#timer-toggle")!;
-    toggle.textContent = this.swRunning ? "⏸" : "▶";
+    toggle.innerHTML = this.swRunning ? IC_PAUSE : IC_PLAY;
     toggle.classList.toggle("on", this.swRunning);
     if (this.swRunning) {
       this.swTimer = window.setInterval(() => this.stopwatchTick(), 1000);
@@ -607,7 +709,7 @@ export class App {
     this.swElapsed = 0;
     this.root.querySelector<HTMLElement>("#study-timer")!.textContent = "00:00:00";
     const toggle = this.root.querySelector<HTMLButtonElement>("#timer-toggle")!;
-    toggle.textContent = "▶";
+    toggle.innerHTML = IC_PLAY;
     toggle.classList.remove("on");
   }
   private flushStudy(): void {
@@ -647,9 +749,12 @@ export class App {
       this.paintExercises();
     };
     body.querySelector<HTMLButtonElement>("#ex-check")!.addEventListener("click", check);
-    body.querySelector<HTMLInputElement>("#ex-answer")?.addEventListener("keydown", (e) => {
+    const answer = body.querySelector<HTMLInputElement>("#ex-answer");
+    answer?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") check();
     });
+    answer?.focus();
+    if (this.exFeedback) fx.exerciseFeedback(body, this.exFeedback.ok);
     void EXERCISE_KINDS; // referência para manter o import (lista usada na view)
   }
 
