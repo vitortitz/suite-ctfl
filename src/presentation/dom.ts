@@ -14,6 +14,12 @@ export function fmtClock(totalSec: number): string {
   const ss = String(s % 60).padStart(2, "0");
   return `${hh}:${mm}:${ss}`;
 }
+/** Converte um dia YYYY-MM-DD para dd/MM/yy. */
+export function fmtDay(day: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!m) return day;
+  return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+}
 export function fmtDuration(totalSec: number): string {
   const m = Math.floor(totalSec / 60);
   if (m < 60) return `${m} min`;

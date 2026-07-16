@@ -1,6 +1,7 @@
 import type { Chapter } from "@/domain/types";
 import type { ProgressDashboard } from "@/application/computeProgress";
-import { esc, fmtDuration } from "../dom";
+import { esc, fmtDay, fmtDuration } from "../dom";
+import { CHAPTER_IDS } from "@/domain/chapters";
 
 export interface ProgressProps {
   dash: ProgressDashboard;
@@ -47,7 +48,7 @@ export function renderProgress(p: ProgressProps): string {
   const activity = d.last14
     .map((x) => {
       const hgt = Math.round((x.seconds / maxSec) * 100);
-      return `<span class="spark ${x.active ? "on" : ""}" style="--h:${Math.max(x.active ? 12 : 4, hgt)}%" data-tip="${x.day} · ${fmtDuration(x.seconds)}" aria-label="${x.day}: ${fmtDuration(x.seconds)} de estudo"></span>`;
+      return `<span class="spark ${x.active ? "on" : ""}" style="--h:${Math.max(x.active ? 12 : 4, hgt)}%" data-tip="${fmtDay(x.day)} · ${fmtDuration(x.seconds)}" aria-label="${fmtDay(x.day)}: ${fmtDuration(x.seconds)} de estudo"></span>`;
     })
     .join("");
 
@@ -56,11 +57,19 @@ export function renderProgress(p: ProgressProps): string {
       ? `<p class="muted small">Nenhuma rodada ainda. Faça um simulado para começar a preencher seu histórico.</p>`
       : d.recent
           .map((a) => {
-            const modeLabel = a.mode === "exam" ? "Exame" : a.mode === "reinforcement" ? "Reforço" : "Estudo";
+            const modeLabel = a.mode === "exam" ? "Exame" : a.mode === "reinforcement" ? "Reforço" : "Estudo dirigido";
+            const usedChapters = [...new Set(a.items.map((it) => it.chapter))].sort((x, y) => x - y);
+            const allChapters = usedChapters.length === CHAPTER_IDS.length;
+            const capChips = allChapters
+              ? `<span class="hist-cap all">Todos os capítulos</span>`
+              : usedChapters
+                  .map((ch) => `<span class="hist-cap" style="--c:${p.chaptersById[ch].color}">Cap. ${ch}</span>`)
+                  .join("");
             return `<div class="hist">
               <span class="hist-mode">${modeLabel}</span>
-              <span class="hist-day">${esc(a.day)}</span>
+              <span class="hist-day">${esc(fmtDay(a.day))}</span>
               <span class="hist-pct ${a.pct >= 65 ? "ok" : "low"}">${a.pct}%</span>
+              <div class="hist-caps" aria-label="Capítulos desta rodada">${capChips}</div>
             </div>`;
           })
           .join("");
@@ -68,7 +77,7 @@ export function renderProgress(p: ProgressProps): string {
   const weakCards = weakChapters
     .map((m, i) => {
       const c = p.chaptersById[m.chapter];
-      return `<button class="weak-card${i === 0 ? " lead" : ""}" data-ch="${m.chapter}" style="--c:${c.color}">
+      return `<button class="weak-card${i === 0 ? " weak-lead" : ""}" data-ch="${m.chapter}" style="--c:${c.color}">
         ${i === 0 ? `<span class="weak-card-flag">Mais fraco</span>` : ""}
         <span class="weak-card-cap">Cap. ${m.chapter}</span>
         <span class="weak-card-name">${esc(c.name)}</span>
